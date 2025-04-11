@@ -1,0 +1,9 @@
+/vendor/
+node_modules/
+.env
+*.log
+.DS_Store
+.htaccess
+autoload.php
+composer.lock
+composer.json
