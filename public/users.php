@@ -2,7 +2,6 @@
 <?php require_once __DIR__ . '/../backend/Kernel.php'; ?>
 <?php 
 use Core\Auth;
-// Vérifier si l'utilisateur est connecté
 if (!Auth::isAuthenticated()) {
     header('Location: /app-gestion-parking/public/login');
     exit;

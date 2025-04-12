@@ -1,5 +1,6 @@
 import { renderNavbar } from './views/navbarView.js';
 import { loadUsers, getUser } from "./controllers/userController.js";
+import { loadParkingSpots } from "./controllers/parkingSpotController.js";
 import { Router } from './core/router.js';
 import { checkAuthStatus, initLoginForm, checkProtectedRoute, getCurrentUser } from './controllers/authController.js';
 import { renderUserForm } from './views/userView.js';
@@ -31,6 +32,25 @@ document.addEventListener("DOMContentLoaded", () => {
             } catch (error) {
               console.error("Erreur lors du chargement des utilisateurs:", error);
               content.innerHTML += `<p class="error-message">Une erreur est survenue lors du chargement des utilisateurs.</p>`;
+            }
+          }
+        }
+      }
+    },
+    { 
+      path: '/app-gestion-parking/public/parking', 
+      controller: async () => {
+        if (checkProtectedRoute()) {
+          const content = document.getElementById('app-content');
+          
+          if (content) {
+            content.innerHTML = '<h1>Gestion des Places de Parking</h1><div id="parking-spot-list"></div>';
+            
+            try {
+              await loadParkingSpots();
+            } catch (error) {
+              console.error("Erreur lors du chargement des places de parking:", error);
+              content.innerHTML += `<p class="error-message">Une erreur est survenue lors du chargement des places de parking.</p>`;
             }
           }
         }
