@@ -1,7 +1,8 @@
 import { renderNavbar } from './views/navbarView.js';
-import { loadUsers } from "./controllers/userController.js";
+import { loadUsers, getUser } from "./controllers/userController.js";
 import { Router } from './core/router.js';
-import { checkAuthStatus, initLoginForm, checkProtectedRoute } from './controllers/authController.js';
+import { checkAuthStatus, initLoginForm, checkProtectedRoute, getCurrentUser } from './controllers/authController.js';
+import { renderUserForm } from './views/userView.js';
 
 document.addEventListener("DOMContentLoaded", () => {
   renderNavbar();
@@ -17,11 +18,82 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     { 
       path: '/app-gestion-parking/public/users', 
-      controller: () => {
+      controller: async () => {
         if (checkProtectedRoute()) {
           const content = document.getElementById('app-content');
-          content.innerHTML = '<h1>Liste des utilisateurs</h1><div id="user-list"></div>';
-          loadUsers();
+          
+          if (content) {
+            content.innerHTML = '<h1>Liste des utilisateurs</h1><div id="user-list"></div>';
+            
+            try {
+              await new Promise(resolve => requestAnimationFrame(resolve));
+              await loadUsers();
+            } catch (error) {
+              console.error("Erreur lors du chargement des utilisateurs:", error);
+              content.innerHTML += `<p class="error-message">Une erreur est survenue lors du chargement des utilisateurs.</p>`;
+            }
+          }
+        }
+      }
+    },
+    {
+      path: '/app-gestion-parking/public/profile',
+      controller: async () => {
+        const content = document.getElementById('app-content');
+        const currentUser = getCurrentUser();
+        
+        if (!currentUser) {
+          window.location.href = "/app-gestion-parking/public/login";
+          return;
+        }
+        
+        const user = await getUser(currentUser.id);
+        if (user) {
+          content.innerHTML = `
+            <h1>Mon Profil</h1>
+            ${renderUserForm(user)}
+          `;
+          const form = document.getElementById('edit-user-form');
+          form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            const userData = {};
+            
+            formData.forEach((value, key) => {
+              if (key !== 'password' || value !== '') {
+                userData[key] = value;
+              }
+            });
+            
+            try {
+              const response = await fetch(`/app-gestion-parking/public/api/users/${user.id}/update`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userData),
+              });
+              
+              const result = await response.json();
+              
+              if (result.success) {
+                const updatedUser = await getUser(user.id);
+                localStorage.setItem("currentUser", JSON.stringify(updatedUser));
+                
+                alert('Profil mis à jour avec succès');
+              } else {
+                document.getElementById('form-error').textContent = result.error || 'Une erreur est survenue';
+              }
+            } catch (error) {
+              console.error('Error:', error);
+              document.getElementById('form-error').textContent = 'Une erreur est survenue';
+            }
+          });
+          
+          document.getElementById('cancel-form').addEventListener('click', () => {
+            window.location.href = "/app-gestion-parking/public/";
+          });
         }
       }
     },

@@ -2,7 +2,6 @@
 <?php require_once __DIR__ . '/../backend/Kernel.php'; ?>
 <?php 
 use Core\Auth;
-// Vérifier si l'utilisateur est connecté
 if (!Auth::isAuthenticated()) {
     header('Location: /app-gestion-parking/public/login');
     exit;
@@ -12,14 +11,12 @@ if (!Auth::isAuthenticated()) {
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Gestion des Utilisateurs - Parking</title>
+  <title>Mon Profil - Gestion de Parking</title>
   <link rel="stylesheet" href="/app-gestion-parking/public/assets/css/styles.css">
   <script type="module" src="/app-gestion-parking/frontend/app.js" defer></script>
 </head>
 <body>
   <div id="app-content">
-    <h1>Gestion des Utilisateurs</h1>
-    <div id="user-list"></div>
   </div>
 </body>
 </html>

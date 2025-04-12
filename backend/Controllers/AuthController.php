@@ -41,6 +41,7 @@ class AuthController {
         $_SESSION['user_name'] = $user->getName();
         $_SESSION['user_email'] = $user->getEmail();
         $_SESSION['user_role'] = $user->getRole();
+        $_SESSION['user_phone'] = $user->getPhone();
         
         echo json_encode([
             'success' => true,
@@ -48,7 +49,8 @@ class AuthController {
                 'id' => $user->getId(),
                 'name' => $user->getName(),
                 'email' => $user->getEmail(),
-                'role' => $user->getRole()
+                'role' => $user->getRole(),
+                'phone' => $user->getPhone()
             ]
         ]);
     }
@@ -85,7 +87,8 @@ class AuthController {
                 'id' => $_SESSION['user_id'],
                 'name' => $_SESSION['user_name'],
                 'email' => $_SESSION['user_email'],
-                'role' => $_SESSION['user_role']
+                'role' => $_SESSION['user_role'],
+                'phone' => $_SESSION['user_phone'] ?? null
             ]
         ]);
     }

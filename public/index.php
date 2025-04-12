@@ -7,9 +7,33 @@ use Controllers\AuthController;
 
 $uri = $_SERVER['REQUEST_URI'];
 
-if (str_contains($uri, '/api/users')) {
+if (preg_match('#^/app-gestion-parking/public/api/users$#', $uri)) {
     $controller = new UserController();
     $controller->index();
+    exit;
+}
+
+if (preg_match('#^/app-gestion-parking/public/api/users/(\d+)$#', $uri, $matches)) {
+    $controller = new UserController();
+    $controller->show($matches[1]);
+    exit;
+}
+
+if ($uri === '/app-gestion-parking/public/api/users/create') {
+    $controller = new UserController();
+    $controller->create();
+    exit;
+}
+
+if (preg_match('#^/app-gestion-parking/public/api/users/(\d+)/update$#', $uri, $matches)) {
+    $controller = new UserController();
+    $controller->update($matches[1]);
+    exit;
+}
+
+if (preg_match('#^/app-gestion-parking/public/api/users/(\d+)/delete$#', $uri, $matches)) {
+    $controller = new UserController();
+    $controller->delete($matches[1]);
     exit;
 }
 
