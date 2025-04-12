@@ -1,9 +1,71 @@
+# Dépendances
 /vendor/
 node_modules/
+
+# Fichiers d'environnement et sensibles
 .env
+.env.*
+*.pem
+*.key
+*.crt
+*.pfx
+config.php
+database.php
+credentials.json
+
+# Fichiers de logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Fichiers système
 .DS_Store
+Thumbs.db
+desktop.ini
+
+# Configuration serveur
 .htaccess
+
+# Fichiers Composer
 autoload.php
 composer.lock
 composer.json
+
+# Fichiers VS Code
+.vscode/
+.history/
+*.code-workspace
+.ionide/
+.settings/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Fichiers temporaires
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Cache et uploads
+/cache/
+/uploads/
+/storage/logs/
+/storage/app/public/
+/storage/framework/cache/
+/storage/framework/sessions/
+/storage/framework/views/
+
+# Fichiers de build
+/dist/
+/build/
+/public/hot/
+/public/storage/
+
+# Ce fichier lui-même
+.gitignore
