@@ -8,7 +8,14 @@ export async function loadUsers() {
         await waitForElement("user-list", 10);
         
         const data = await fetchJSON("/app-gestion-parking/public/api/users");
-        const users = data.map(user => new User(user.id, user.name, user.email, user.role, user.phone));
+        const users = data.map(user => new User(
+            user.id, 
+            user.name, 
+            user.email, 
+            user.role, 
+            user.phone,
+            user.is_active
+        ));
         renderUsers(users);
         
         setupUserEvents();
@@ -43,7 +50,14 @@ async function waitForElement(elementId, maxAttempts = 5) {
 export async function getUser(userId) {
     try {
         const data = await fetchJSON(`/app-gestion-parking/public/api/users/${userId}`);
-        return new User(data.id, data.name, data.email, data.role, data.phone);
+        return new User(
+            data.id, 
+            data.name, 
+            data.email, 
+            data.role, 
+            data.phone,
+            data.is_active
+        );
     } catch (error) {
         console.error(`Error fetching user ${userId}:`, error);
         return null;

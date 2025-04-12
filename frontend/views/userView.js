@@ -22,6 +22,7 @@ export function renderUsers(users) {
     
     renderUsersInContainer(container, users);
 }
+
 function renderUsersInContainer(container, users) {
     container.innerHTML = "";
     
@@ -38,11 +39,16 @@ function renderUsersInContainer(container, users) {
     users.forEach(user => {
         const div = document.createElement("div");
         div.className = "user-card";
+        if (user.is_active === false) {
+            div.classList.add("user-inactive");
+        }
+        
         div.innerHTML = `
             <h3>${user.name}</h3>
             <p>Email: ${user.email}</p>
             <p>Role: ${user.role}</p>
             ${user.phone ? `<p>Téléphone: ${user.phone}</p>` : ''}
+            <p>Statut: ${user.is_active ? '<span class="status-active">Actif</span>' : '<span class="status-inactive">Inactif</span>'}</p>
             <div class="user-actions">
                 ${isAdmin || currentUser.id === user.id ? 
                     `<button class="btn-edit" data-id="${user.id}">Modifier</button>` : ''}
@@ -77,10 +83,10 @@ export function renderUserForm(user = null) {
                 <label for="password">Mot de passe ${isEditing ? '(laisser vide pour ne pas changer)' : ''}:</label>
                 <input type="password" id="password" name="password" ${!isEditing ? 'required' : ''}>
             </div>
-            ${canEditPhone ? `
+            ${canEditPhone || !isEditing ? `
             <div class="form-group">
                 <label for="phone">Téléphone:</label>
-                <input type="tel" id="phone" name="phone" value="${user.phone || ''}" placeholder="Ex: 0612345678">
+                <input type="tel" id="phone" name="phone" value="${isEditing && user.phone ? user.phone : ''}" placeholder="Ex: 0612345678">
             </div>
             ` : ''}
             ${isAdmin ? `
@@ -90,6 +96,13 @@ export function renderUserForm(user = null) {
                     <option value="user" ${isEditing && user.role === 'user' ? 'selected' : ''}>Utilisateur</option>
                     <option value="admin" ${isEditing && user.role === 'admin' ? 'selected' : ''}>Administrateur</option>
                     <option value="owner" ${isEditing && user.role === 'owner' ? 'selected' : ''}>Propriétaire</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="is_active">Statut:</label>
+                <select id="is_active" name="is_active" required>
+                    <option value="1" ${isEditing && user.is_active ? 'selected' : ''}>Actif</option>
+                    <option value="0" ${isEditing && !user.is_active ? 'selected' : ''}>Inactif</option>
                 </select>
             </div>
             ` : ''}

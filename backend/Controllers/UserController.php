@@ -26,7 +26,8 @@ class UserController {
                 'name' => $user->getName(),
                 'email' => $user->getEmail(),
                 'role' => $user->getRole(),
-                'phone' => $user->getPhone()
+                'phone' => $user->getPhone(),
+                'is_active' => $user->isActive()
             ];
         }, $users);
         
@@ -59,7 +60,8 @@ class UserController {
             'name' => $user->getName(),
             'email' => $user->getEmail(),
             'role' => $user->getRole(),
-            'phone' => $user->getPhone()
+            'phone' => $user->getPhone(),
+            'is_active' => $user->isActive()
         ]);
     }
     

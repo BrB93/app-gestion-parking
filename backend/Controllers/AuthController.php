@@ -5,6 +5,7 @@ use Core\Auth;
 
 class AuthController {
     private $userRepo;
+    private $supportEmail = "support@parking.fr";
 
     public function __construct() {
         $this->userRepo = new UserRepository();
@@ -33,6 +34,16 @@ class AuthController {
         if (!$user || !$user->verifyPassword($password)) {
             http_response_code(401);
             echo json_encode(['error' => 'Nom d\'utilisateur ou mot de passe incorrect']);
+            return;
+        }
+        
+        if (!$user->isActive()) {
+            http_response_code(403);
+            echo json_encode([
+                'error' => 'Compte inactif', 
+                'message' => "Votre compte a été désactivé. Veuillez contacter {$this->supportEmail} pour plus d'informations.",
+                'inactive' => true
+            ]);
             return;
         }
         

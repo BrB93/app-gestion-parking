@@ -172,3 +172,19 @@ body {
     border-radius: 5px;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
   }
+
+  .user-inactive {
+    opacity: 0.7;
+    background-color: #f8f9fa;
+    border-left: 5px solid #dc3545;
+  }
+
+  .status-active {
+    color: #28a745;
+    font-weight: bold;
+  }
+
+  .status-inactive {
+    color: #dc3545;
+    font-weight: bold;
+  }

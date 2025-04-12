@@ -4,18 +4,40 @@ import { renderLoginForm, renderLogoutButton } from "../views/authView.js";
 
 export async function login(username, password) {
   try {
-    const data = await postJSON("/app-gestion-parking/public/api/login", { username, password });
+    const response = await fetch("/app-gestion-parking/public/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username, password }),
+    });
     
-    if (data.success) {
+    const data = await response.json();
+    
+    if (response.ok && data.success) {
       localStorage.setItem("currentUser", JSON.stringify(data.user));
       window.location.href = "/app-gestion-parking/public/";
-      return true;
+      return { success: true };
     }
     
-    return false;
+    if (response.status === 403 && data.inactive) {
+      return { 
+        success: false, 
+        inactive: true, 
+        message: data.message 
+      };
+    }
+    
+    return { 
+      success: false, 
+      message: data.error || "Erreur de connexion" 
+    };
   } catch (error) {
     console.error("Login error:", error);
-    return false;
+    return { 
+      success: false, 
+      message: "Une erreur est survenue lors de la connexion" 
+    };
   }
 }
 
@@ -55,10 +77,22 @@ export function initLoginForm() {
     const password = document.getElementById("password").value;
     const errorElement = document.getElementById("login-error");
     
-    const success = await login(username, password);
+    const result = await login(username, password);
     
-    if (!success) {
-      errorElement.textContent = "Nom d'utilisateur ou mot de passe incorrect";
+    if (!result.success) {
+      errorElement.textContent = result.message;
+      
+      if (result.inactive) {
+        const supportEmail = result.message.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/);
+        if (supportEmail && supportEmail[0]) {
+          const emailLink = document.createElement('a');
+          emailLink.href = `mailto:${supportEmail[0]}`;
+          emailLink.textContent = supportEmail[0];
+          emailLink.style.color = '#3498db';
+          
+          errorElement.innerHTML = result.message.replace(supportEmail[0], emailLink.outerHTML);
+        }
+      }
     }
   });
 }
