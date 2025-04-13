@@ -17,22 +17,21 @@ export async function loadPersons() {
     try {
         await waitForElement("person-list", 10);
         
-        // Récupérer les données et les afficher brutes pour débogage
         const response = await fetch("/app-gestion-parking/public/api/persons");
         const responseText = await response.text();
         
         try {
-            // Essayer de parser le JSON
             const data = JSON.parse(responseText);
             console.log("API Response:", data);
             
-            // Vérifier si data est un tableau
             const personsArray = Array.isArray(data) ? data : [];
             console.log("Persons array:", personsArray);
             
             const persons = personsArray.map(p => new Person(
                 p.id,
                 p.user_id,
+                p.first_name,
+                p.last_name,
                 p.address,
                 p.apartment_number,
                 p.phone_number,
@@ -48,7 +47,6 @@ export async function loadPersons() {
             console.error("JSON Parse Error:", parseError);
             console.log("Raw response:", responseText);
             
-            // Afficher l'erreur dans l'interface utilisateur
             const container = document.getElementById("person-list");
             if (container) {
                 container.innerHTML = `<p class="error-message">Erreur de format de données: ${parseError.message}</p>
@@ -58,7 +56,6 @@ export async function loadPersons() {
     } catch (error) {
         console.error("Error loading persons:", error);
         
-        // Afficher l'erreur dans l'interface utilisateur
         const container = document.getElementById("person-list");
         if (container) {
             container.innerHTML = `<p class="error-message">Erreur de chargement: ${error.message}</p>`;
@@ -102,7 +99,6 @@ export async function getPerson(id) {
 
 export async function createPerson(personData) {
     try {
-        // Assurez-vous que user_id est défini pour la création
         if (!personData.user_id) {
             const currentUser = getCurrentUser();
             if (currentUser) {
@@ -144,8 +140,7 @@ function setupPersonEvents() {
     const createBtn = document.getElementById('create-person-btn');
     if (createBtn) {
         createBtn.addEventListener('click', async () => {
-            // Notez l'ajout de "async" ici pour utiliser await
-            contentElement.innerHTML = await renderPersonForm(); // Notez l'ajout de "await" ici
+            contentElement.innerHTML = await renderPersonForm();
             setupFormSubmission();
         });
     }
@@ -155,7 +150,7 @@ function setupPersonEvents() {
             const id = button.getAttribute('data-id');
             const person = await getPerson(id);
             if (person) {
-                contentElement.innerHTML = await renderPersonForm(person); // Notez l'ajout de "await" ici
+                contentElement.innerHTML = await renderPersonForm(person);
                 setupFormSubmission(id);
             }
         });

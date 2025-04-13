@@ -1,7 +1,7 @@
 import { renderNavbar } from './views/navbarView.js';
 import { loadUsers, getUser } from "./controllers/userController.js";
 import { loadParkingSpots } from "./controllers/parkingSpotController.js";
-import { loadPersons } from "./controllers/personController.js"; // ← NEW
+import { loadPersons } from "./controllers/personController.js";
 import { Router } from './core/router.js';
 import { checkAuthStatus, initLoginForm, checkProtectedRoute, getCurrentUser } from './controllers/authController.js';
 import { renderUserForm } from './views/userView.js';
@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     },
     {
-      path: '/app-gestion-parking/public/persons', // ← NEW
+      path: '/app-gestion-parking/public/persons',
       controller: async () => {
         if (checkProtectedRoute()) {
           const content = document.getElementById('app-content');

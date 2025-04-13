@@ -14,7 +14,7 @@ class User {
 
     public function getId(): int { return $this->id; }
     public function getusername(): string { return $this->username; }
-    public function getName(): string { return $this->username; } // Ajout de cette méthode comme alias
+    public function getName(): string { return $this->username; }
     public function getEmail(): string { return $this->email; }
     public function getRole(): string { return $this->role; }
     public function getPhone(): ?string { return $this->phone; }

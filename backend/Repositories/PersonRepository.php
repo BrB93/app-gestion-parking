@@ -44,11 +44,13 @@ class PersonRepository {
 
     public function createPerson(array $data): bool {
         $stmt = $this->db->prepare("
-            INSERT INTO persons (user_id, address, apartment_number, phone_number, vehicle_brand, vehicle_model, license_plate)
-            VALUES (:user_id, :address, :apartment_number, :phone_number, :vehicle_brand, :vehicle_model, :license_plate)
+            INSERT INTO persons (user_id, first_name, last_name, address, apartment_number, phone_number, vehicle_brand, vehicle_model, license_plate)
+            VALUES (:user_id, :first_name, :last_name, :address, :apartment_number, :phone_number, :vehicle_brand, :vehicle_model, :license_plate)
         ");
 
         $stmt->bindParam(':user_id', $data['user_id'], PDO::PARAM_INT);
+        $stmt->bindParam(':first_name', $data['first_name'], PDO::PARAM_STR);
+        $stmt->bindParam(':last_name', $data['last_name'], PDO::PARAM_STR);
         $stmt->bindParam(':address', $data['address'], PDO::PARAM_STR);
         $stmt->bindParam(':apartment_number', $data['apartment_number']);
         $stmt->bindParam(':phone_number', $data['phone_number']);
@@ -86,6 +88,8 @@ class PersonRepository {
         return new Person(
             $row['id'],
             $row['user_id'],
+            $row['first_name'] ?? '',
+            $row['last_name'] ?? '',
             $row['address'],
             $row['apartment_number'] ?? null,
             $row['phone_number'] ?? null,

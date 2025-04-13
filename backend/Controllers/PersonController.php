@@ -25,6 +25,8 @@ class PersonController {
             return [
                 'id' => $person->getId(),
                 'user_id' => $person->getUserId(),
+                'first_name' => $person->getFirstName(),
+                'last_name' => $person->getLastName(),
                 'address' => $person->getAddress(),
                 'apartment_number' => $person->getApartmentNumber(),
                 'phone_number' => $person->getPhoneNumber(),
@@ -59,6 +61,8 @@ class PersonController {
         echo json_encode([
             'id' => $person->getId(),
             'user_id' => $person->getUserId(),
+            'first_name' => $person->getFirstName(),
+            'last_name' => $person->getLastName(),
             'address' => $person->getAddress(),
             'apartment_number' => $person->getApartmentNumber(),
             'phone_number' => $person->getPhoneNumber(),
@@ -80,9 +84,9 @@ class PersonController {
 
         $data = json_decode(file_get_contents('php://input'), true);
 
-        if (!isset($data['user_id'], $data['address'])) {
+        if (!isset($data['user_id'], $data['first_name'], $data['last_name'], $data['address'])) {
             http_response_code(400);
-            echo json_encode(['error' => 'Données incomplètes']);
+            echo json_encode(['error' => 'Données incomplètes. Prénom, nom, ID utilisateur et adresse sont obligatoires.']);
             return;
         }
 

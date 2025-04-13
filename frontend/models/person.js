@@ -1,13 +1,16 @@
 export class Person {
-    constructor(id, user_id, address, apartment_number = null, phone_number = null, created_at = null, vehicle_brand = null, vehicle_model = null, license_plate = null) {
+    constructor(id, userId, firstName, lastName, address, apartmentNumber = null, phoneNumber = null, 
+                createdAt = null, vehicleBrand = null, vehicleModel = null, licensePlate = null) {
       this.id = id;
-      this.user_id = user_id;
+      this.user_id = userId;
+      this.first_name = firstName;
+      this.last_name = lastName;
       this.address = address;
-      this.apartment_number = apartment_number;
-      this.phone_number = phone_number;
-      this.created_at = created_at;
-      this.vehicle_brand = vehicle_brand;
-      this.vehicle_model = vehicle_model;
-      this.license_plate = license_plate;
+      this.apartment_number = apartmentNumber;
+      this.phone_number = phoneNumber;
+      this.created_at = createdAt;
+      this.vehicle_brand = vehicleBrand;
+      this.vehicle_model = vehicleModel;
+      this.license_plate = licensePlate;
     }
   }

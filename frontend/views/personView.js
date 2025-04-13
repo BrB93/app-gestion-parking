@@ -35,7 +35,8 @@ function renderPersonsInContainer(container, persons) {
         div.className = "person-card";
 
         div.innerHTML = `
-            <h3>Adresse: ${person.address}</h3>
+            <h3>${person.first_name || ''} ${person.last_name || ''}</h3>
+            <p>Adresse: ${person.address}</p>
             ${person.apartment_number ? `<p>Appartement: ${person.apartment_number}</p>` : ''}
             ${person.phone_number ? `<p>Téléphone: ${person.phone_number}</p>` : ''}
             ${person.vehicle_brand || person.vehicle_model ? `<p>Véhicule: ${person.vehicle_brand ?? ''} ${person.vehicle_model ?? ''}</p>` : ''}
@@ -55,7 +56,6 @@ export async function renderPersonForm(person = null) {
     const currentUser = getCurrentUser();
     const isAdmin = currentUser && currentUser.role === 'admin';
     
-    // Récupérer la liste des utilisateurs disponibles
     const users = await getAvailableUsers();
 
     return `
@@ -72,6 +72,14 @@ export async function renderPersonForm(person = null) {
                         </option>
                     `).join('')}
                 </select>
+            </div>
+            <div class="form-group">
+                <label for="first_name">Prénom:</label>
+                <input type="text" id="first_name" name="first_name" value="${isEditing && person.first_name ? person.first_name : ''}" required>
+            </div>
+            <div class="form-group">
+                <label for="last_name">Nom:</label>
+                <input type="text" id="last_name" name="last_name" value="${isEditing && person.last_name ? person.last_name : ''}" required>
             </div>
             <div class="form-group">
                 <label for="address">Adresse:</label>
