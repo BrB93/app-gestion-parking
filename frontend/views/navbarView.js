@@ -7,7 +7,10 @@ export function renderNavbar() {
     nav.innerHTML = `
       <div class="nav-links">
         <a href="/app-gestion-parking/public/" data-route="/app-gestion-parking/public/">Accueil</a>
-        ${user && user.role === 'admin' ? `<a href="/app-gestion-parking/public/users" data-route="/app-gestion-parking/public/users">Utilisateurs</a>` : ''}
+        ${user && user.role === 'admin' ? `
+          <a href="/app-gestion-parking/public/users" data-route="/app-gestion-parking/public/users">Utilisateurs</a>
+          <a href="/app-gestion-parking/public/persons" data-route="/app-gestion-parking/public/persons">Personnes</a>
+        ` : ''}
         <a href="/app-gestion-parking/public/parking" data-route="/app-gestion-parking/public/parking">Places de parking</a>
         <a href="/app-gestion-parking/public/vehicles" data-route="/app-gestion-parking/public/vehicles">Véhicules</a>
         ${user ? `<a href="/app-gestion-parking/public/profile" data-route="/app-gestion-parking/public/profile">Mon Profil</a>` : ''}

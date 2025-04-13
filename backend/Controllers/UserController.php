@@ -23,7 +23,7 @@ class UserController {
         $usersArray = array_map(function($user) {
             return [
                 'id' => $user->getId(),
-                'name' => $user->getName(),
+                'username' => $user->getusername(),
                 'email' => $user->getEmail(),
                 'role' => $user->getRole(),
                 'phone' => $user->getPhone(),
@@ -57,7 +57,7 @@ class UserController {
         header('Content-Type: application/json');
         echo json_encode([
             'id' => $user->getId(),
-            'name' => $user->getName(),
+            'username' => $user->getusername(),
             'email' => $user->getEmail(),
             'role' => $user->getRole(),
             'phone' => $user->getPhone(),
@@ -76,7 +76,7 @@ class UserController {
         
         $data = json_decode(file_get_contents('php://input'), true);
         
-        if (!isset($data['name']) || !isset($data['email']) || !isset($data['password']) || !isset($data['role'])) {
+        if (!isset($data['username']) || !isset($data['email']) || !isset($data['password']) || !isset($data['role'])) {
             http_response_code(400);
             echo json_encode(['error' => 'Données incomplètes']);
             return;
@@ -88,7 +88,7 @@ class UserController {
             return;
         }
         
-        $result = $this->userRepo->createUser($data['name'], $data['email'], $data['password'], $data['role']);
+        $result = $this->userRepo->createUser($data['username'], $data['email'], $data['password'], $data['role']);
         
         if ($result) {
             http_response_code(201);

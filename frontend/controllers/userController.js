@@ -10,7 +10,7 @@ export async function loadUsers() {
         const data = await fetchJSON("/app-gestion-parking/public/api/users");
         const users = data.map(user => new User(
             user.id, 
-            user.name, 
+            user.username, 
             user.email, 
             user.role, 
             user.phone,
@@ -52,7 +52,7 @@ export async function getUser(userId) {
         const data = await fetchJSON(`/app-gestion-parking/public/api/users/${userId}`);
         return new User(
             data.id, 
-            data.name, 
+            data.username, 
             data.email, 
             data.role, 
             data.phone,

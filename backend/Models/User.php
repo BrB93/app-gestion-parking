@@ -4,7 +4,7 @@ namespace Models;
 class User {
     public function __construct(
         private int $id,
-        private string $name,
+        private string $username,
         private string $email,
         private string $role,
         private ?string $password = null,
@@ -13,7 +13,8 @@ class User {
     ) {}
 
     public function getId(): int { return $this->id; }
-    public function getName(): string { return $this->name; }
+    public function getusername(): string { return $this->username; }
+    public function getName(): string { return $this->username; } // Ajout de cette méthode comme alias
     public function getEmail(): string { return $this->email; }
     public function getRole(): string { return $this->role; }
     public function getPhone(): ?string { return $this->phone; }

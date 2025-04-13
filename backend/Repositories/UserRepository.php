@@ -12,12 +12,12 @@ class UserRepository {
     }
 
     public function getAllUsers(): array {
-        $stmt = $this->db->query("SELECT id, name, email, phone, role, is_active FROM users");
+        $stmt = $this->db->query("SELECT id, username, email, phone, role, is_active FROM users");
         $users = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $users[] = new User(
                 $row['id'],
-                $row['name'], 
+                $row['username'], 
                 $row['email'], 
                 $row['role'], 
                 null, 
@@ -29,7 +29,7 @@ class UserRepository {
     }
     
     public function findUserByEmail(string $email): ?User {
-        $stmt = $this->db->prepare("SELECT id, name, email, role, password, phone, is_active FROM users WHERE email = :email");
+        $stmt = $this->db->prepare("SELECT id, username, email, role, password, phone, is_active FROM users WHERE email = :email");
         $stmt->bindParam(':email', $email, PDO::PARAM_STR);
         $stmt->execute();
         
@@ -40,7 +40,7 @@ class UserRepository {
         
         return new User(
             $row['id'], 
-            $row['name'], 
+            $row['username'], 
             $row['email'], 
             $row['role'], 
             $row['password'],
@@ -50,7 +50,7 @@ class UserRepository {
     }
     
     public function findUserById(int $id): ?User {
-        $stmt = $this->db->prepare("SELECT id, name, email, role, phone, is_active FROM users WHERE id = :id");
+        $stmt = $this->db->prepare("SELECT id, username, email, role, phone, is_active FROM users WHERE id = :id");
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
         
@@ -61,7 +61,7 @@ class UserRepository {
         
         return new User(
             $row['id'], 
-            $row['name'], 
+            $row['username'], 
             $row['email'], 
             $row['role'],
             null,
@@ -70,12 +70,12 @@ class UserRepository {
         );
     }
     
-    public function createUser(string $name, string $email, string $password, string $role = 'user'): bool {
+    public function createUser(string $username, string $email, string $password, string $role = 'user'): bool {
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
         $is_active = 1;
         
-        $stmt = $this->db->prepare("INSERT INTO users (name, email, password, role, is_active) VALUES (:name, :email, :password, :role, :is_active)");
-        $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+        $stmt = $this->db->prepare("INSERT INTO users (username, email, password, role, is_active) VALUES (:username, :email, :password, :role, :is_active)");
+        $stmt->bindParam(':username', $username, PDO::PARAM_STR);
         $stmt->bindParam(':email', $email, PDO::PARAM_STR);
         $stmt->bindParam(':password', $hashedPassword, PDO::PARAM_STR);
         $stmt->bindParam(':role', $role, PDO::PARAM_STR);
@@ -84,9 +84,9 @@ class UserRepository {
         return $stmt->execute();
     }
     
-    public function findUserByName(string $name): ?User {
-        $stmt = $this->db->prepare("SELECT id, name, email, role, password, phone, is_active FROM users WHERE name = :name");
-        $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+    public function findUserByName(string $username): ?User {
+        $stmt = $this->db->prepare("SELECT id, username, email, role, password, phone, is_active FROM users WHERE username = :username");
+        $stmt->bindParam(':username', $username, PDO::PARAM_STR);
         $stmt->execute();
         
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -96,7 +96,7 @@ class UserRepository {
         
         return new User(
             $row['id'], 
-            $row['name'], 
+            $row['username'], 
             $row['email'], 
             $row['role'], 
             $row['password'],

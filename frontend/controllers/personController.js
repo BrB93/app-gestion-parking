@@ -1,0 +1,216 @@
+import { fetchJSON, postJSON } from "../core/fetchWrapper.js";
+import { Person } from "../models/person.js";
+import { renderPersons, renderPersonForm, renderDeleteConfirmation } from "../views/personView.js";
+import { getCurrentUser } from "./authController.js";
+
+export async function getAvailableUsers() {
+    try {
+        const data = await fetchJSON("/app-gestion-parking/public/api/users");
+        return data;
+    } catch (error) {
+        console.error("Error loading available users:", error);
+        return [];
+    }
+}
+
+export async function loadPersons() {
+    try {
+        await waitForElement("person-list", 10);
+        
+        // Récupérer les données et les afficher brutes pour débogage
+        const response = await fetch("/app-gestion-parking/public/api/persons");
+        const responseText = await response.text();
+        
+        try {
+            // Essayer de parser le JSON
+            const data = JSON.parse(responseText);
+            console.log("API Response:", data);
+            
+            // Vérifier si data est un tableau
+            const personsArray = Array.isArray(data) ? data : [];
+            console.log("Persons array:", personsArray);
+            
+            const persons = personsArray.map(p => new Person(
+                p.id,
+                p.user_id,
+                p.address,
+                p.apartment_number,
+                p.phone_number,
+                p.created_at,
+                p.vehicle_brand,
+                p.vehicle_model,
+                p.license_plate
+            ));
+            
+            renderPersons(persons);
+            setupPersonEvents();
+        } catch (parseError) {
+            console.error("JSON Parse Error:", parseError);
+            console.log("Raw response:", responseText);
+            
+            // Afficher l'erreur dans l'interface utilisateur
+            const container = document.getElementById("person-list");
+            if (container) {
+                container.innerHTML = `<p class="error-message">Erreur de format de données: ${parseError.message}</p>
+                                      <p>Réponse du serveur: ${responseText.substring(0, 100)}...</p>`;
+            }
+        }
+    } catch (error) {
+        console.error("Error loading persons:", error);
+        
+        // Afficher l'erreur dans l'interface utilisateur
+        const container = document.getElementById("person-list");
+        if (container) {
+            container.innerHTML = `<p class="error-message">Erreur de chargement: ${error.message}</p>`;
+        }
+    }
+}
+
+async function waitForElement(elementId, maxAttempts = 5) {
+    return new Promise((resolve, reject) => {
+        let attempts = 0;
+        const checkElement = () => {
+            attempts++;
+            const element = document.getElementById(elementId);
+            if (element) return resolve(element);
+            if (attempts >= maxAttempts) return reject(new Error(`Element '${elementId}' not found`));
+            setTimeout(checkElement, 100 * Math.pow(2, attempts - 1));
+        };
+        checkElement();
+    });
+}
+
+export async function getPerson(id) {
+    try {
+        const data = await fetchJSON(`/app-gestion-parking/public/api/persons/${id}`);
+        return new Person(
+            data.id,
+            data.user_id,
+            data.address,
+            data.apartment_number,
+            data.phone_number,
+            data.created_at,
+            data.vehicle_brand,
+            data.vehicle_model,
+            data.license_plate
+        );
+    } catch (error) {
+        console.error(`Error fetching person ${id}:`, error);
+        return null;
+    }
+}
+
+export async function createPerson(personData) {
+    try {
+        // Assurez-vous que user_id est défini pour la création
+        if (!personData.user_id) {
+            const currentUser = getCurrentUser();
+            if (currentUser) {
+                personData.user_id = currentUser.id;
+            }
+        }
+        
+        const response = await postJSON("/app-gestion-parking/public/api/persons/create", personData);
+        return response;
+    } catch (error) {
+        console.error("Error creating person:", error);
+        return { error: error.message };
+    }
+}
+
+export async function updatePerson(id, personData) {
+    try {
+        const response = await postJSON(`/app-gestion-parking/public/api/persons/${id}/update`, personData);
+        return response;
+    } catch (error) {
+        console.error(`Error updating person ${id}:`, error);
+        return { error: error.message };
+    }
+}
+
+export async function deletePerson(id) {
+    try {
+        const response = await postJSON(`/app-gestion-parking/public/api/persons/${id}/delete`, {});
+        return response;
+    } catch (error) {
+        console.error(`Error deleting person ${id}:`, error);
+        return { error: error.message };
+    }
+}
+
+function setupPersonEvents() {
+    const contentElement = document.getElementById('app-content');
+
+    const createBtn = document.getElementById('create-person-btn');
+    if (createBtn) {
+        createBtn.addEventListener('click', async () => {
+            // Notez l'ajout de "async" ici pour utiliser await
+            contentElement.innerHTML = await renderPersonForm(); // Notez l'ajout de "await" ici
+            setupFormSubmission();
+        });
+    }
+
+    document.querySelectorAll('.btn-edit').forEach(button => {
+        button.addEventListener('click', async () => {
+            const id = button.getAttribute('data-id');
+            const person = await getPerson(id);
+            if (person) {
+                contentElement.innerHTML = await renderPersonForm(person); // Notez l'ajout de "await" ici
+                setupFormSubmission(id);
+            }
+        });
+    });
+
+    document.querySelectorAll('.btn-delete').forEach(button => {
+        button.addEventListener('click', () => {
+            const id = button.getAttribute('data-id');
+            const modalContainer = document.createElement('div');
+            modalContainer.id = 'modal-container';
+            modalContainer.innerHTML = renderDeleteConfirmation(id);
+            document.body.appendChild(modalContainer);
+
+            document.getElementById('confirm-delete').addEventListener('click', async () => {
+                const result = await deletePerson(id);
+                if (result.success) {
+                    document.body.removeChild(modalContainer);
+                    loadPersons();
+                }
+            });
+
+            document.getElementById('cancel-delete').addEventListener('click', () => {
+                document.body.removeChild(modalContainer);
+            });
+        });
+    });
+}
+
+function setupFormSubmission(id = null) {
+    const isEditing = id !== null;
+    const formId = isEditing ? 'edit-person-form' : 'create-person-form';
+    const form = document.getElementById(formId);
+    const errorElement = document.getElementById('form-error');
+
+    document.getElementById('cancel-form').addEventListener('click', () => {
+        loadPersons();
+    });
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const personData = {};
+
+        formData.forEach((value, key) => {
+            personData[key] = value;
+        });
+
+        const result = isEditing
+            ? await updatePerson(id, personData)
+            : await createPerson(personData);
+
+        if (result.error) {
+            errorElement.textContent = result.error;
+        } else if (result.success) {
+            loadPersons();
+        }
+    });
+}

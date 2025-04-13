@@ -5,6 +5,8 @@ require_once __DIR__ . '/../backend/Kernel.php';
 use Controllers\UserController;
 use Controllers\AuthController;
 use Controllers\ParkingSpotController;
+use Controllers\PersonController;
+
 
 $uri = $_SERVER['REQUEST_URI'];
 
@@ -92,6 +94,37 @@ if (preg_match('#^/app-gestion-parking/public/api/parking-spots/(\d+)/delete$#',
 if ($uri === '/app-gestion-parking/public/api/parking-spots/available') {
     $controller = new ParkingSpotController();
     $controller->available();
+    exit;
+}
+
+// personnes
+if (preg_match('#^/app-gestion-parking/public/api/persons$#', $uri)) {
+    $controller = new PersonController();
+    $controller->index();
+    exit;
+}
+
+if (preg_match('#^/app-gestion-parking/public/api/persons/(\d+)$#', $uri, $matches)) {
+    $controller = new PersonController();
+    $controller->show($matches[1]);
+    exit;
+}
+
+if ($uri === '/app-gestion-parking/public/api/persons/create') {
+    $controller = new PersonController();
+    $controller->create();
+    exit;
+}
+
+if (preg_match('#^/app-gestion-parking/public/api/persons/(\d+)/update$#', $uri, $matches)) {
+    $controller = new PersonController();
+    $controller->update($matches[1]);
+    exit;
+}
+
+if (preg_match('#^/app-gestion-parking/public/api/persons/(\d+)/delete$#', $uri, $matches)) {
+    $controller = new PersonController();
+    $controller->delete($matches[1]);
     exit;
 }
 

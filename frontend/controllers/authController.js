@@ -56,7 +56,7 @@ export function getCurrentUser() {
   if (!userData) return null;
   
   const user = JSON.parse(userData);
-  return new User(user.id, user.name, user.email, user.role);
+  return new User(user.id, user.username, user.email, user.role);
 }
 
 export function checkAuthStatus() {

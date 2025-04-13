@@ -44,7 +44,7 @@ function renderUsersInContainer(container, users) {
         }
         
         div.innerHTML = `
-            <h3>${user.name}</h3>
+            <h3>${user.username}</h3>
             <p>Email: ${user.email}</p>
             <p>Role: ${user.role}</p>
             ${user.phone ? `<p>Téléphone: ${user.phone}</p>` : ''}
@@ -72,8 +72,8 @@ export function renderUserForm(user = null) {
         <h2>${isEditing ? 'Modifier' : 'Créer'} un utilisateur</h2>
         <form id="${isEditing ? 'edit-user-form' : 'create-user-form'}" data-id="${isEditing ? user.id : ''}">
             <div class="form-group">
-                <label for="name">Nom:</label>
-                <input type="text" id="name" name="name" value="${isEditing ? user.name : ''}" required>
+                <label for="name">Nom d'utilisateur:</label>
+                <input type="text" id="username" name="username" value="${isEditing ? user.username : ''}" required>
             </div>
             <div class="form-group">
                 <label for="email">Email:</label>
