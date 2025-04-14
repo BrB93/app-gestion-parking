@@ -36,7 +36,7 @@ function renderPersonsInContainer(container, persons) {
 
         div.innerHTML = `
             <h3>${person.first_name || ''} ${person.last_name || ''}</h3>
-            <p>Adresse: ${person.address}</p>
+            <p>Adresse: ${person.address} ${person.zip_code || ''} ${person.city || ''}</p>
             ${person.apartment_number ? `<p>Appartement: ${person.apartment_number}</p>` : ''}
             ${person.phone_number ? `<p>Téléphone: ${person.phone_number}</p>` : ''}
             ${person.vehicle_brand || person.vehicle_model ? `<p>Véhicule: ${person.vehicle_brand ?? ''} ${person.vehicle_model ?? ''}</p>` : ''}
@@ -84,6 +84,14 @@ export async function renderPersonForm(person = null) {
             <div class="form-group">
                 <label for="address">Adresse:</label>
                 <input type="text" id="address" name="address" value="${isEditing ? person.address : ''}" required>
+            </div>
+                        <div class="form-group">
+                <label for="address">Code postal:</label>
+                <input type="text" id="zip_code" name="zip_code" value="${isEditing ? person.zip_code : ''}" required>
+            </div>
+                        <div class="form-group">
+                <label for="address">Ville:</label>
+                <input type="text" id="city" name="city" value="${isEditing ? person.city : ''}" required>
             </div>
             <div class="form-group">
                 <label for="apartment_number">Appartement:</label>

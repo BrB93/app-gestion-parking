@@ -8,6 +8,8 @@ class Person {
         private string $first_name,
         private string $last_name,
         private string $address,
+        private string $zip_code,
+        private string $city,
         private ?string $apartment_number = null,
         private ?string $phone_number = null,
         private ?string $created_at = null,
@@ -21,6 +23,8 @@ class Person {
     public function getFirstName(): string { return $this->first_name; }
     public function getLastName(): string { return $this->last_name; }
     public function getAddress(): string { return $this->address; }
+    public function getZipCode(): string { return $this->zip_code; }
+    public function getCity(): string { return $this->city; }
     public function getApartmentNumber(): ?string { return $this->apartment_number; }
     public function getPhoneNumber(): ?string { return $this->phone_number; }
     public function getCreatedAt(): ?string { return $this->created_at; }

@@ -44,20 +44,22 @@ class PersonRepository {
 
     public function createPerson(array $data): bool {
         $stmt = $this->db->prepare("
-            INSERT INTO persons (user_id, first_name, last_name, address, apartment_number, phone_number, vehicle_brand, vehicle_model, license_plate)
-            VALUES (:user_id, :first_name, :last_name, :address, :apartment_number, :phone_number, :vehicle_brand, :vehicle_model, :license_plate)
+            INSERT INTO persons (user_id, first_name, last_name, address, zip_code, city, apartment_number, phone_number, vehicle_brand, vehicle_model, license_plate)
+            VALUES (:user_id, :first_name, :last_name, :address, :zip_code, :city, :apartment_number, :phone_number, :vehicle_brand, :vehicle_model, :license_plate)
         ");
-
+    
         $stmt->bindParam(':user_id', $data['user_id'], PDO::PARAM_INT);
         $stmt->bindParam(':first_name', $data['first_name'], PDO::PARAM_STR);
         $stmt->bindParam(':last_name', $data['last_name'], PDO::PARAM_STR);
         $stmt->bindParam(':address', $data['address'], PDO::PARAM_STR);
+        $stmt->bindParam(':zip_code', $data['zip_code'], PDO::PARAM_STR);
+        $stmt->bindParam(':city', $data['city'], PDO::PARAM_STR);
         $stmt->bindParam(':apartment_number', $data['apartment_number']);
         $stmt->bindParam(':phone_number', $data['phone_number']);
         $stmt->bindParam(':vehicle_brand', $data['vehicle_brand']);
         $stmt->bindParam(':vehicle_model', $data['vehicle_model']);
         $stmt->bindParam(':license_plate', $data['license_plate']);
-
+    
         return $stmt->execute();
     }
 
@@ -91,6 +93,8 @@ class PersonRepository {
             $row['first_name'] ?? '',
             $row['last_name'] ?? '',
             $row['address'],
+            $row['zip_code'] ?? '',
+            $row['city'] ?? '',
             $row['apartment_number'] ?? null,
             $row['phone_number'] ?? null,
             $row['created_at'] ?? null,
