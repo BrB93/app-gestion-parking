@@ -1,4 +1,5 @@
-import { getCurrentUser } from '../controllers/authController.js';
+import { fetchJSON } from "../core/fetchWrapper.js";
+import { getCurrentUser } from "../controllers/authController.js";
 
 export function renderParkingSpots(spots) {
     const container = document.getElementById("parking-spot-list");
@@ -62,38 +63,61 @@ function renderSpots(spots, container) {
     container.innerHTML = "";
     const currentUser = getCurrentUser();
     const isAdmin = currentUser && currentUser.role === 'admin';
+    const isOwner = currentUser && currentUser.role === 'owner';
+    const isRegularUser = currentUser && currentUser.role === 'user';
     
     if (spots.length === 0) {
         container.innerHTML = "<p>Aucune place de parking trouvée.</p>";
         return;
     }
     
-    spots.forEach(spot => {
-        const div = document.createElement("div");
-        div.className = `parking-spot ${spot.getStatusClass()}`;
-        div.dataset.type = spot.type;
-        div.dataset.status = spot.status;
-        
-        div.innerHTML = `
-            <h3>Place ${spot.spot_number}</h3>
-            <p>Type: ${spot.getTypeLabel()}</p>
-            <p>Statut: <span class="${spot.getStatusClass()}">${spot.status}</span></p>
-            ${spot.owner_id ? `<p>Propriétaire: ID ${spot.owner_id}</p>` : ''}
-            ${spot.pricing_id ? `<p>Tarification: ID ${spot.pricing_id}</p>` : ''}
-            <div class="spot-actions">
-                ${isAdmin ? 
-                    `<button class="btn-edit btn-edit-spot" data-id="${spot.id}">Modifier</button>
-                     <button class="btn-delete btn-delete-spot" data-id="${spot.id}">Supprimer</button>` : 
-                    spot.isAvailable() ? 
-                    `<button class="btn-primary btn-reserve-spot" data-id="${spot.id}">Réserver</button>` : 
-                    ''
+    fetchJSON("/app-gestion-parking/public/api/parking-spots/form-data")
+        .then(formData => {
+            const personsMap = {};
+            if (formData.persons) {
+                formData.persons.forEach(person => {
+                    personsMap[person.id] = person.name;
+                });
+            }
+
+            spots.forEach(spot => {
+                const div = document.createElement("div");
+                div.className = `parking-spot ${spot.getStatusClass()}`;
+                div.dataset.type = spot.type;
+                div.dataset.status = spot.status;
+                
+                let spotContent = `
+                    <h3>Place ${spot.spot_number}</h3>
+                    <p>Type: ${spot.getTypeLabel()}</p>
+                    <p>Statut: <span class="${spot.getStatusClass()}">${spot.status}</span></p>`;
+                
+                if (!isRegularUser) {
+                    spotContent += `
+                        ${spot.owner_id ? `<p>Propriétaire: ${personsMap[spot.owner_id] || 'Inconnu'}</p>` : ''}
+                        ${spot.pricing_id ? `<p>Tarification: ID ${spot.pricing_id}</p>` : ''}`;
                 }
-            </div>
-        `;
-        container.appendChild(div);
-    });
-    
-    attachSpotEvents();
+                
+                spotContent += `
+                    <div class="spot-actions">
+                        ${isAdmin ? 
+                            `<button class="btn-edit btn-edit-spot" data-id="${spot.id}">Modifier</button>
+                             <button class="btn-delete btn-delete-spot" data-id="${spot.id}">Supprimer</button>` : 
+                            spot.isAvailable() ? 
+                            `<button class="btn-primary btn-reserve-spot" data-id="${spot.id}">Réserver</button>` : 
+                            ''
+                        }
+                    </div>`;
+                
+                div.innerHTML = spotContent;
+                container.appendChild(div);
+            });
+            
+            attachSpotEvents();
+        })
+        .catch(error => {
+            console.error("Erreur lors du chargement des données des propriétaires:", error);
+            renderSpotsWithIdsOnly(spots, container);
+        });
 }
 
 function attachSpotEvents() {
