@@ -97,6 +97,12 @@ if ($uri === '/app-gestion-parking/public/api/parking-spots/available') {
     exit;
 }
 
+if ($uri === '/app-gestion-parking/public/api/parking-spots/form-data') {
+    $controller = new ParkingSpotController();
+    $controller->getFormData();
+    exit;
+}
+
 // personnes
 if (preg_match('#^/app-gestion-parking/public/api/persons$#', $uri)) {
     $controller = new PersonController();

@@ -127,4 +127,23 @@ class ParkingSpotRepository {
     public function getAvailableSpots(): array {
         return $this->getSpotsByStatus('libre');
     }
+
+    public function getSpotsByOwnerId(int $ownerId): array {
+        $stmt = $this->db->prepare("SELECT * FROM parking_spots WHERE owner_id = :owner_id ORDER BY spot_number");
+        $stmt->bindParam(':owner_id', $ownerId, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        $spots = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $spots[] = new ParkingSpot(
+                $row['id'],
+                $row['spot_number'], 
+                $row['type'], 
+                $row['status'],
+                $row['owner_id'],
+                $row['pricing_id']
+            );
+        }
+        return $spots;
+    }
 }

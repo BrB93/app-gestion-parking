@@ -8,6 +8,7 @@ export function renderParkingSpots(spots) {
     
     const currentUser = getCurrentUser();
     const isAdmin = currentUser && currentUser.role === 'admin';
+    const isOwner = currentUser && currentUser.role === 'owner';
     
     if (isAdmin) {
         const createBtn = document.createElement("button");
@@ -15,6 +16,13 @@ export function renderParkingSpots(spots) {
         createBtn.id = "create-spot-btn";
         createBtn.textContent = "Créer une nouvelle place";
         container.appendChild(createBtn);
+    }
+    
+    if (isOwner) {
+        const ownerMessage = document.createElement("div");
+        ownerMessage.className = "owner-message info-banner";
+        ownerMessage.innerHTML = "<p>Vous consultez uniquement les places de parking dont vous êtes propriétaire.</p>";
+        container.appendChild(ownerMessage);
     }
     
     const filterSection = document.createElement("div");
@@ -126,12 +134,15 @@ function setupFilterEvents(allSpots, container) {
     });
 }
 
-export function renderParkingSpotForm(spot = null) {
+export function renderParkingSpotForm(spot = null, formData = null) {
     const isEditing = spot !== null;
     const currentUser = getCurrentUser();
     const isAdmin = currentUser && currentUser.role === 'admin';
     
     if (!isAdmin) return "<p>Vous n'avez pas les droits pour effectuer cette action.</p>";
+    
+    // Ajout d'un log pour déboguer
+    console.log("Données du formulaire:", formData);
     
     return `
     <div class="form-container">
@@ -159,12 +170,32 @@ export function renderParkingSpotForm(spot = null) {
                 </select>
             </div>
             <div class="form-group">
-                <label for="owner_id">ID du propriétaire (optionnel):</label>
-                <input type="number" id="owner_id" name="owner_id" value="${isEditing && spot.owner_id ? spot.owner_id : ''}">
+                <label for="owner_id">Propriétaire:</label>
+                <select id="owner_id" name="owner_id">
+                    <option value="">-- Aucun propriétaire --</option>
+                    ${formData && formData.persons && formData.persons.length > 0 ? 
+                        formData.persons.map(person => 
+                            `<option value="${person.id}" ${isEditing && spot.owner_id == person.id ? 'selected' : ''}>
+                                ${person.name || `Personne #${person.id}`}
+                            </option>`
+                        ).join('') : 
+                        '<option value="" disabled>Aucune personne disponible</option>'
+                    }
+                </select>
             </div>
             <div class="form-group">
-                <label for="pricing_id">ID de tarification (optionnel):</label>
-                <input type="number" id="pricing_id" name="pricing_id" value="${isEditing && spot.pricing_id ? spot.pricing_id : ''}">
+                <label for="pricing_id">Tarification:</label>
+                <select id="pricing_id" name="pricing_id">
+                    <option value="">-- Aucune tarification --</option>
+                    ${formData && formData.pricings && formData.pricings.length > 0 ? 
+                        formData.pricings.map(pricing => 
+                            `<option value="${pricing.id}" ${isEditing && spot.pricing_id == pricing.id ? 'selected' : ''}>
+                                ${pricing.name} - ${pricing.price}€
+                            </option>`
+                        ).join('') : 
+                        '<option value="" disabled>Aucune tarification disponible</option>'
+                    }
+                </select>
             </div>
             <div class="form-group">
                 <button type="submit" class="btn-primary">${isEditing ? 'Mettre à jour' : 'Créer'}</button>

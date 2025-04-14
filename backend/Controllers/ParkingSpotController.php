@@ -13,7 +13,17 @@ class ParkingSpotController {
     public function index() {
         Auth::requireAuthentication();
         
-        $spots = $this->spotRepo->getAllSpots();
+        $currentUser = Auth::getCurrentUser();
+        
+        if ($currentUser->getRole() === 'admin') {
+            $spots = $this->spotRepo->getAllSpots();
+        } 
+        elseif ($currentUser->getRole() === 'owner') {
+            $spots = $this->spotRepo->getSpotsByOwnerId($currentUser->getId());
+        } 
+        else {
+            $spots = $this->spotRepo->getAllSpots();
+        }
         
         header('Content-Type: application/json');
         $spotsArray = array_map(function($spot) {
@@ -71,8 +81,8 @@ class ParkingSpotController {
         }
         
         $status = $data['status'] ?? 'libre';
-        $owner_id = $data['owner_id'] ?? null;
-        $pricing_id = $data['pricing_id'] ?? null;
+        $owner_id = (!empty($data['owner_id'])) ? (int)$data['owner_id'] : null;
+        $pricing_id = (!empty($data['pricing_id'])) ? (int)$data['pricing_id'] : null;
         
         $result = $this->spotRepo->createSpot(
             $data['spot_number'], 
@@ -149,4 +159,32 @@ class ParkingSpotController {
         
         echo json_encode($spotsArray);
     }
+
+    public function getFormData() {
+        Auth::requireAuthentication();
+        
+        $personRepo = new \Repositories\PersonRepository();
+        $persons = $personRepo->getAllPersons();
+        $pricingRepo = new \Repositories\PricingRepository();
+        $pricings = $pricingRepo->getAllPricings();
+        
+        header('Content-Type: application/json');
+        echo json_encode([
+            'persons' => array_map(function($person) {
+                return [
+                    'id' => $person->getId(),
+                    'name' => $person->getFirstName() . ' ' . $person->getLastName(),
+                    'user_id' => $person->getUserId()
+                ];
+            }, $persons),
+            'pricings' => array_map(function($pricing) {
+                return [
+                    'id' => $pricing->getId(),
+                    'name' => $pricing->getName(),
+                    'price' => $pricing->getPrice()
+                ];
+            }, $pricings)
+        ]);
+    }
+    
 }

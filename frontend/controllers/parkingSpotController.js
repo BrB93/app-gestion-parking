@@ -40,6 +40,17 @@ export async function loadAvailableSpots() {
     }
 }
 
+async function getFormData() {
+    try {
+        const data = await fetchJSON("/app-gestion-parking/public/api/parking-spots/form-data");
+        console.log("Données récupérées pour le formulaire:", data);
+        return data;
+    } catch (error) {
+        console.error("Error loading form data:", error);
+        return { persons: [], pricings: [] };
+    }
+}
+
 export async function getParkingSpot(spotId) {
     try {
         const data = await fetchJSON(`/app-gestion-parking/public/api/parking-spots/${spotId}`);
@@ -95,8 +106,9 @@ function setupParkingSpotEvents() {
     if (isAdmin) {
         const createBtn = document.getElementById('create-spot-btn');
         if (createBtn) {
-            createBtn.addEventListener('click', () => {
-                contentElement.innerHTML = renderParkingSpotForm();
+            createBtn.addEventListener('click', async () => {
+                const formData = await getFormData();
+                contentElement.innerHTML = renderParkingSpotForm(null, formData);
                 setupFormSubmission();
             });
         }
@@ -107,9 +119,10 @@ function setupParkingSpotEvents() {
         button.addEventListener('click', async () => {
             const spotId = button.getAttribute('data-id');
             const spot = await getParkingSpot(spotId);
+            const formData = await getFormData();
             
             if (spot) {
-                contentElement.innerHTML = renderParkingSpotForm(spot);
+                contentElement.innerHTML = renderParkingSpotForm(spot, formData);
                 setupFormSubmission(spotId);
             }
         });
@@ -156,7 +169,12 @@ function setupFormSubmission(spotId = null) {
         const spotData = {};
         
         formData.forEach((value, key) => {
-            spotData[key] = value;
+            // Convertir les champs numériques vides en null
+            if ((key === 'owner_id' || key === 'pricing_id') && value === '') {
+                spotData[key] = null;
+            } else {
+                spotData[key] = value;
+            }
         });
         
         let result;
