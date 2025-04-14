@@ -174,7 +174,7 @@ function setupFormSubmission(userId = null) {
         if (result.error) {
             errorElement.textContent = result.error;
         } else if (result.success) {
-            loadUsers();
+            window.location.href = '/app-gestion-parking/public/users';
         }
     });
 }

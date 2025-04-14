@@ -169,7 +169,6 @@ function setupFormSubmission(spotId = null) {
         const spotData = {};
         
         formData.forEach((value, key) => {
-            // Convertir les champs numériques vides en null
             if ((key === 'owner_id' || key === 'pricing_id') && value === '') {
                 spotData[key] = null;
             } else {
@@ -187,7 +186,7 @@ function setupFormSubmission(spotId = null) {
         if (result.error) {
             errorElement.textContent = result.error;
         } else if (result.success) {
-            loadParkingSpots();
+            window.location.href = '/app-gestion-parking/public/parking';
         }
     });
 }

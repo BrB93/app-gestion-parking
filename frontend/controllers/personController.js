@@ -209,7 +209,7 @@ function setupFormSubmission(id = null) {
         if (result.error) {
             errorElement.textContent = result.error;
         } else if (result.success) {
-            loadPersons();
+            window.location.href = '/app-gestion-parking/public/persons';
         }
     });
 }
