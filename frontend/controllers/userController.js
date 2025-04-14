@@ -2,6 +2,7 @@ import { fetchJSON, postJSON } from "../core/fetchWrapper.js";
 import { User } from "../models/user.js";
 import { renderUsers, renderUserForm, renderDeleteConfirmation } from "../views/userView.js";
 import { getCurrentUser } from "./authController.js";
+import { validateFormData } from "../core/validator.js";
 
 export async function loadUsers() {
     try {
@@ -163,6 +164,18 @@ function setupFormSubmission(userId = null) {
                 userData[key] = value;
             }
         });
+
+        const validation = validateFormData(userData);
+        
+        if (!validation.isValid) {
+            const errors = validation.errors;
+            let errorMessage = "Veuillez corriger les erreurs suivantes:\n";
+            for (const field in errors) {
+                errorMessage += `- ${errors[field]}\n`;
+            }
+            errorElement.textContent = errorMessage;
+            return;
+        }
         
         let result;
         if (isEditing) {

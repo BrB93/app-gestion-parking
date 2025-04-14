@@ -2,6 +2,7 @@
 namespace Controllers;
 use Repositories\ParkingSpotRepository;
 use Core\Auth;
+use Core\Validator;
 
 class ParkingSpotController {
     private $spotRepo;
@@ -73,6 +74,7 @@ class ParkingSpotController {
         }
         
         $data = json_decode(file_get_contents('php://input'), true);
+        $data = Validator::sanitizeData($data);
         
         if (!isset($data['spot_number']) || !isset($data['type'])) {
             http_response_code(400);

@@ -2,6 +2,8 @@ import { fetchJSON, postJSON } from "../core/fetchWrapper.js";
 import { Person } from "../models/person.js";
 import { renderPersons, renderPersonForm, renderDeleteConfirmation } from "../views/personView.js";
 import { getCurrentUser } from "./authController.js";
+import { validateFormData } from "../core/validator.js";
+
 
 export async function getAvailableUsers() {
     try {
@@ -197,10 +199,22 @@ function setupFormSubmission(id = null) {
         e.preventDefault();
         const formData = new FormData(form);
         const personData = {};
-
+    
         formData.forEach((value, key) => {
             personData[key] = value;
         });
+        const validation = validateFormData(personData);
+    
+        if (!validation.isValid) {
+            const errors = validation.errors;
+            let errorMessage = "Veuillez corriger les erreurs suivantes:\n";
+            for (const field in errors) {
+                errorMessage += `- ${errors[field]}\n`;
+            }
+            errorElement.textContent = errorMessage;
+            return;
+        }
+    
 
         const result = isEditing
             ? await updatePerson(id, personData)

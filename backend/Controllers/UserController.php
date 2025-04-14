@@ -2,6 +2,7 @@
 namespace Controllers;
 use Repositories\UserRepository;
 use Core\Auth;
+use Core\Validator;
 
 class UserController {
     private $userRepo;
@@ -75,6 +76,8 @@ class UserController {
         }
         
         $data = json_decode(file_get_contents('php://input'), true);
+        $data = Validator::sanitizeData($data);
+
         
         if (!isset($data['username']) || !isset($data['email']) || !isset($data['password']) || !isset($data['role'])) {
             http_response_code(400);

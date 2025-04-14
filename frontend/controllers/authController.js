@@ -1,9 +1,17 @@
 import { fetchJSON, postJSON } from "../core/fetchWrapper.js";
 import { User } from "../models/user.js";
 import { renderLoginForm, renderLogoutButton } from "../views/authView.js";
+import { validateFormData, isSafeString } from "../core/validator.js";
 
 export async function login(username, password) {
   try {
+    if (!isSafeString(username)) {
+      return { 
+        success: false, 
+        message: "Le nom d'utilisateur contient des caractères non autorisés" 
+      };
+    }
+    
     const response = await fetch("/app-gestion-parking/public/api/login", {
       method: "POST",
       headers: {
@@ -76,6 +84,18 @@ export function initLoginForm() {
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
     const errorElement = document.getElementById("login-error");
+    const loginData = { username, password };
+    const validation = validateFormData(loginData);
+    
+    if (!validation.isValid) {
+      const errors = validation.errors;
+      let errorMessage = "Veuillez corriger les erreurs suivantes:\n";
+      for (const field in errors) {
+        errorMessage += `- ${errors[field]}\n`;
+      }
+      errorElement.textContent = errorMessage;
+      return;
+    }
     
     const result = await login(username, password);
     

@@ -2,6 +2,7 @@
 namespace Controllers;
 use Repositories\UserRepository;
 use Core\Auth;
+use Core\Validator;
 
 class AuthController {
     private $userRepo;
@@ -20,6 +21,8 @@ class AuthController {
         
         $data = json_decode(file_get_contents('php://input'), true);
         
+        $data = Validator::sanitizeData($data);
+        
         if (!isset($data['username']) || !isset($data['password'])) {
             http_response_code(400);
             echo json_encode(['error' => 'Nom d\'utilisateur et mot de passe requis']);
@@ -28,6 +31,11 @@ class AuthController {
         
         $username = $data['username'];
         $password = $data['password'];
+                if (!Validator::isSafeString($username)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Données invalides détectées']);
+            return;
+        }
         
         $user = $this->userRepo->findUserByName($username);
         

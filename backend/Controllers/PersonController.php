@@ -2,6 +2,7 @@
 namespace Controllers;
 use Repositories\PersonRepository;
 use Core\Auth;
+use Core\Validator;
 
 class PersonController {
     private $personRepo;
@@ -87,6 +88,8 @@ class PersonController {
         }
 
         $data = json_decode(file_get_contents('php://input'), true);
+        $data = Validator::sanitizeData($data);
+
 
         if (!isset($data['user_id'], $data['first_name'], $data['last_name'], $data['address'], $data['zip_code'], $data['city'])) {
             http_response_code(400);

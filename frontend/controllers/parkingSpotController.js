@@ -2,6 +2,7 @@ import { fetchJSON, postJSON } from "../core/fetchWrapper.js";
 import { ParkingSpot } from "../models/parkingSpot.js";
 import { renderParkingSpots, renderParkingSpotForm, renderDeleteConfirmation } from "../views/parkingSpotView.js";
 import { getCurrentUser } from "./authController.js";
+import { validateFormData } from "../core/validator.js";
 
 export async function loadParkingSpots() {
     try {
@@ -175,6 +176,18 @@ function setupFormSubmission(spotId = null) {
                 spotData[key] = value;
             }
         });
+
+        const validation = validateFormData(spotData);
+                
+        if (!validation.isValid) {
+            const errors = validation.errors;
+            let errorMessage = "Veuillez corriger les erreurs suivantes:\n";
+            for (const field in errors) {
+                errorMessage += `- ${errors[field]}\n`;
+            }
+            errorElement.textContent = errorMessage;
+            return;
+        }
         
         let result;
         if (isEditing) {
