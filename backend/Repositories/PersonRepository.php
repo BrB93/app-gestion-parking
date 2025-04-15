@@ -42,7 +42,7 @@ class PersonRepository {
         return $row ? $this->mapToPerson($row) : null;
     }
 
-    public function createPerson(array $data): bool {
+    public function createPerson(array $data) {
         $stmt = $this->db->prepare("
             INSERT INTO persons (user_id, first_name, last_name, address, zip_code, city, apartment_number, phone_number, vehicle_brand, vehicle_model, license_plate)
             VALUES (:user_id, :first_name, :last_name, :address, :zip_code, :city, :apartment_number, :phone_number, :vehicle_brand, :vehicle_model, :license_plate)
@@ -54,13 +54,24 @@ class PersonRepository {
         $stmt->bindParam(':address', $data['address'], PDO::PARAM_STR);
         $stmt->bindParam(':zip_code', $data['zip_code'], PDO::PARAM_STR);
         $stmt->bindParam(':city', $data['city'], PDO::PARAM_STR);
-        $stmt->bindParam(':apartment_number', $data['apartment_number']);
-        $stmt->bindParam(':phone_number', $data['phone_number']);
-        $stmt->bindParam(':vehicle_brand', $data['vehicle_brand']);
-        $stmt->bindParam(':vehicle_model', $data['vehicle_model']);
-        $stmt->bindParam(':license_plate', $data['license_plate']);
+        
+        $apartmentNumber = $data['apartment_number'] ?? null;
+        $phoneNumber = $data['phone_number'] ?? null;
+        $vehicleBrand = $data['vehicle_brand'] ?? null;
+        $vehicleModel = $data['vehicle_model'] ?? null;
+        $licensePlate = $data['license_plate'] ?? null;
+        
+        $stmt->bindParam(':apartment_number', $apartmentNumber, PDO::PARAM_STR);
+        $stmt->bindParam(':phone_number', $phoneNumber, PDO::PARAM_STR);
+        $stmt->bindParam(':vehicle_brand', $vehicleBrand, PDO::PARAM_STR);
+        $stmt->bindParam(':vehicle_model', $vehicleModel, PDO::PARAM_STR);
+        $stmt->bindParam(':license_plate', $licensePlate, PDO::PARAM_STR);
     
-        return $stmt->execute();
+        if ($stmt->execute()) {
+            return $this->db->lastInsertId();
+        }
+        
+        return false;
     }
 
     public function updatePerson(int $id, array $data): bool {

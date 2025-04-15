@@ -17,6 +17,8 @@ if (!Auth::isAuthenticated()) {
 </head>
 <body>
   <div id="app-content">
+    <h1>Mon Profil</h1>
+    <div class="loading">Chargement des données...</div>
   </div>
 </body>
 </html>

@@ -110,9 +110,9 @@ if (preg_match('#^/app-gestion-parking/public/api/persons$#', $uri)) {
     exit;
 }
 
-if (preg_match('#^/app-gestion-parking/public/api/persons/(\d+)$#', $uri, $matches)) {
+if (preg_match('#^/app-gestion-parking/public/api/persons/by-user/(\d+)$#', $uri, $matches)) {
     $controller = new PersonController();
-    $controller->show($matches[1]);
+    $controller->getByUserId($matches[1]);
     exit;
 }
 
@@ -131,6 +131,12 @@ if (preg_match('#^/app-gestion-parking/public/api/persons/(\d+)/update$#', $uri,
 if (preg_match('#^/app-gestion-parking/public/api/persons/(\d+)/delete$#', $uri, $matches)) {
     $controller = new PersonController();
     $controller->delete($matches[1]);
+    exit;
+}
+
+if (preg_match('#^/app-gestion-parking/public/api/persons/by-user/(\d+)$#', $uri, $matches)) {
+    $controller = new PersonController();
+    $controller->getByUserId($matches[1]);
     exit;
 }
 

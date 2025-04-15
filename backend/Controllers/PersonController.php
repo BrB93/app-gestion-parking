@@ -3,6 +3,8 @@ namespace Controllers;
 use Repositories\PersonRepository;
 use Core\Auth;
 use Core\Validator;
+use Models\Person;
+use Exception;
 
 class PersonController {
     private $personRepo;
@@ -13,14 +15,9 @@ class PersonController {
 
     public function index() {
         Auth::requireAuthentication();
-
-        if (Auth::hasRole('admin')) {
-            $persons = $this->personRepo->getAllPersons();
-        } else {
-            $currentUser = Auth::getCurrentUser();
-            $persons = $this->personRepo->getPersonsByUserId($currentUser->getId());
-        }
-
+        
+        $persons = $this->personRepo->getAllPersons();
+        
         header('Content-Type: application/json');
         $personsArray = array_map(function($person) {
             return [
@@ -39,27 +36,21 @@ class PersonController {
                 'license_plate' => $person->getLicensePlate(),
             ];
         }, $persons);
-
+        
         echo json_encode($personsArray);
     }
 
     public function show($id) {
         Auth::requireAuthentication();
-
+        
         $person = $this->personRepo->findPersonById($id);
+        
         if (!$person) {
             http_response_code(404);
             echo json_encode(['error' => 'Personne non trouvée']);
             return;
         }
-
-        $currentUser = Auth::getCurrentUser();
-        if (!Auth::hasRole('admin') && $person->getUserId() != $currentUser->getId()) {
-            http_response_code(403);
-            echo json_encode(['error' => 'Accès non autorisé']);
-            return;
-        }
-
+        
         header('Content-Type: application/json');
         echo json_encode([
             'id' => $person->getId(),
@@ -80,84 +71,203 @@ class PersonController {
 
     public function create() {
         Auth::requireAuthentication();
-
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['error' => 'Méthode non autorisée']);
             return;
         }
-
+        
         $data = json_decode(file_get_contents('php://input'), true);
-        $data = Validator::sanitizeData($data);
-
-
-        if (!isset($data['user_id'], $data['first_name'], $data['last_name'], $data['address'], $data['zip_code'], $data['city'])) {
+        if (!$data) {
             http_response_code(400);
-            echo json_encode(['error' => 'Données incomplètes. Prénom, nom, ID utilisateur et adresse sont obligatoires.']);
+            echo json_encode(['error' => 'Données invalides']);
             return;
         }
-
-        $result = $this->personRepo->createPerson($data);
-
-        if ($result) {
-            http_response_code(201);
-            echo json_encode(['success' => true, 'message' => 'Personne créée avec succès']);
-        } else {
+        
+        $currentUser = Auth::getCurrentUser();
+        if (!Auth::hasRole('admin') && $data['user_id'] != $currentUser->getId()) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Vous ne pouvez pas créer des informations pour un autre utilisateur']);
+            return;
+        }
+        
+        $data = Validator::sanitizeData($data);
+        
+        try {
+            $result = $this->personRepo->createPerson($data);
+            
+            if ($result) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'person' => [
+                    'id' => $result,
+                    'user_id' => $data['user_id'],
+                    'first_name' => $data['first_name'],
+                    'last_name' => $data['last_name']
+                ]]);
+            } else {
+                http_response_code(500);
+                echo json_encode(['error' => 'Erreur lors de la création de la personne']);
+            }
+        } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['error' => 'Erreur lors de la création de la personne']);
+            echo json_encode(['error' => 'Erreur lors de la création: ' . $e->getMessage()]);
         }
     }
 
     public function update($id) {
         Auth::requireAuthentication();
-
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['error' => 'Méthode non autorisée']);
             return;
         }
-
-        $person = $this->personRepo->findPersonById($id);
-        if (!$person) {
+        
+        $data = json_decode(file_get_contents('php://input'), true);
+        if (!$data) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Données invalides']);
+            return;
+        }
+        
+        $existingPerson = $this->personRepo->findPersonById($id);
+        if (!$existingPerson) {
             http_response_code(404);
             echo json_encode(['error' => 'Personne non trouvée']);
             return;
         }
-
+        
         $currentUser = Auth::getCurrentUser();
-        if (!Auth::hasRole('admin') && $person->getUserId() != $currentUser->getId()) {
+        if (!Auth::hasRole('admin') && $existingPerson->getUserId() != $currentUser->getId()) {
             http_response_code(403);
-            echo json_encode(['error' => 'Accès non autorisé']);
+            echo json_encode(['error' => 'Vous ne pouvez pas modifier les informations d\'un autre utilisateur']);
             return;
         }
-
-        $data = json_decode(file_get_contents('php://input'), true);
-        $result = $this->personRepo->updatePerson($id, $data);
-
-        if ($result) {
-            echo json_encode(['success' => true, 'message' => 'Personne mise à jour avec succès']);
-        } else {
+        
+        $data = Validator::sanitizeData($data);
+        
+        if (!Auth::hasRole('admin') && isset($data['user_id']) && $data['user_id'] != $existingPerson->getUserId()) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Vous ne pouvez pas changer l\'utilisateur associé']);
+            return;
+        }
+        
+        try {
+            if (isset($data['first_name'])) {
+                $existingPerson->setFirstName($data['first_name']);
+            }
+            
+            if (isset($data['last_name'])) {
+                $existingPerson->setLastName($data['last_name']);
+            }
+            
+            if (isset($data['address'])) {
+                $existingPerson->setAddress($data['address']);
+            }
+            
+            if (isset($data['zip_code'])) {
+                $existingPerson->setZipCode($data['zip_code']);
+            }
+            
+            if (isset($data['city'])) {
+                $existingPerson->setCity($data['city']);
+            }
+            
+            if (isset($data['apartment_number'])) {
+                $existingPerson->setApartmentNumber($data['apartment_number']);
+            }
+            
+            if (isset($data['phone_number'])) {
+                $existingPerson->setPhoneNumber($data['phone_number']);
+            }
+            
+            if (isset($data['vehicle_brand'])) {
+                $existingPerson->setVehicleBrand($data['vehicle_brand']);
+            }
+            
+            if (isset($data['vehicle_model'])) {
+                $existingPerson->setVehicleModel($data['vehicle_model']);
+            }
+            
+            if (isset($data['license_plate'])) {
+                $existingPerson->setLicensePlate($data['license_plate']);
+            }
+            
+            $updatedPerson = $this->personRepo->updatePerson($existingPerson);
+            
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'person' => [
+                'id' => $updatedPerson->getId(),
+                'user_id' => $updatedPerson->getUserId(),
+                'first_name' => $updatedPerson->getFirstName(),
+                'last_name' => $updatedPerson->getLastName()
+            ]]);
+        } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['error' => 'Erreur lors de la mise à jour']);
+            echo json_encode(['error' => 'Erreur lors de la mise à jour: ' . $e->getMessage()]);
         }
     }
 
     public function delete($id) {
-        Auth::requireRole('admin');
-
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            http_response_code(405);
-            echo json_encode(['error' => 'Méthode non autorisée']);
+        Auth::requireAuthentication();
+        
+        $existingPerson = $this->personRepo->findPersonById($id);
+        if (!$existingPerson) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Personne non trouvée']);
             return;
         }
-
-        $result = $this->personRepo->deletePerson($id);
-
-        if ($result) {
-            echo json_encode(['success' => true, 'message' => 'Personne supprimée avec succès']);
-        } else {
-            http_response_code(500);
-            echo json_encode(['error' => 'Erreur lors de la suppression']);
+        
+        $currentUser = Auth::getCurrentUser();
+        if (!Auth::hasRole('admin') && $existingPerson->getUserId() != $currentUser->getId()) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Vous ne pouvez pas supprimer les informations d\'un autre utilisateur']);
+            return;
         }
+        
+        try {
+            $this->personRepo->deletePerson($id);
+            
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Erreur lors de la suppression: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getByUserId($userId) {
+        Auth::requireAuthentication();
+        
+        $currentUser = Auth::getCurrentUser();
+        if (!Auth::hasRole('admin') && $currentUser->getId() != $userId) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Accès non autorisé']);
+            return;
+        }
+    
+        $persons = $this->personRepo->getPersonsByUserId($userId);
+    
+        header('Content-Type: application/json');
+        $personsArray = array_map(function($person) {
+            return [
+                'id' => $person->getId(),
+                'user_id' => $person->getUserId(),
+                'first_name' => $person->getFirstName(),
+                'last_name' => $person->getLastName(),
+                'address' => $person->getAddress(),
+                'zip_code' => $person->getZipCode(),
+                'city' => $person->getCity(),
+                'apartment_number' => $person->getApartmentNumber(),
+                'phone_number' => $person->getPhoneNumber(),
+                'created_at' => $person->getCreatedAt(),
+                'vehicle_brand' => $person->getVehicleBrand(),
+                'vehicle_model' => $person->getVehicleModel(),
+                'license_plate' => $person->getLicensePlate(),
+            ];
+        }, $persons);
+    
+        echo json_encode($personsArray);
     }
 }

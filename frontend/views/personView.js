@@ -52,74 +52,86 @@ function renderPersonsInContainer(container, persons) {
 }
 
 export async function renderPersonForm(person = null) {
-    const isEditing = person !== null;
     const currentUser = getCurrentUser();
-    const isAdmin = currentUser && currentUser.role === 'admin';
     
-    const users = await getAvailableUsers();
+    const id = person?.id || '';
+    const userId = currentUser.id;
+    const firstName = person?.first_name || '';
+    const lastName = person?.last_name || '';
+    const address = person?.address || '';
+    const zipCode = person?.zip_code || '';
+    const city = person?.city || '';
+    const apartmentNumber = person?.apartment_number || '';
+    const phoneNumber = person?.phone_number || '';
+    const vehicleBrand = person?.vehicle_brand || '';
+    const vehicleModel = person?.vehicle_model || '';
+    const licensePlate = person?.license_plate || '';
 
+    const isProfilePage = window.location.pathname.includes('/profile');
+    
     return `
-    <div class="form-container">
-        <h2>${isEditing ? 'Modifier' : 'Ajouter'} une personne</h2>
-        <form id="${isEditing ? 'edit-person-form' : 'create-person-form'}" data-id="${isEditing ? person.id : ''}">
-            <div class="form-group">
-                <label for="user_id">Utilisateur associé:</label>
-                <select id="user_id" name="user_id" required>
-                    <option value="">Sélectionnez un utilisateur</option>
-                    ${users.map(user => `
-                        <option value="${user.id}" ${isEditing && person.user_id === user.id ? 'selected' : ''}>
-                            ${user.name} (${user.email}) - ${user.role}
-                        </option>
-                    `).join('')}
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="first_name">Prénom:</label>
-                <input type="text" id="first_name" name="first_name" value="${isEditing && person.first_name ? person.first_name : ''}" required>
-            </div>
-            <div class="form-group">
-                <label for="last_name">Nom:</label>
-                <input type="text" id="last_name" name="last_name" value="${isEditing && person.last_name ? person.last_name : ''}" required>
-            </div>
-            <div class="form-group">
-                <label for="address">Adresse:</label>
-                <input type="text" id="address" name="address" value="${isEditing ? person.address : ''}" required>
-            </div>
-                        <div class="form-group">
-                <label for="address">Code postal:</label>
-                <input type="text" id="zip_code" name="zip_code" value="${isEditing ? person.zip_code : ''}" required>
-            </div>
-                        <div class="form-group">
-                <label for="address">Ville:</label>
-                <input type="text" id="city" name="city" value="${isEditing ? person.city : ''}" required>
-            </div>
-            <div class="form-group">
-                <label for="apartment_number">Appartement:</label>
-                <input type="text" id="apartment_number" name="apartment_number" value="${isEditing && person.apartment_number ? person.apartment_number : ''}">
-            </div>
-            <div class="form-group">
-                <label for="phone_number">Téléphone:</label>
-                <input type="tel" id="phone_number" name="phone_number" value="${isEditing && person.phone_number ? person.phone_number : ''}">
-            </div>
-            <div class="form-group">
-                <label for="vehicle_brand">Marque du véhicule:</label>
-                <input type="text" id="vehicle_brand" name="vehicle_brand" value="${isEditing && person.vehicle_brand ? person.vehicle_brand : ''}">
-            </div>
-            <div class="form-group">
-                <label for="vehicle_model">Modèle:</label>
-                <input type="text" id="vehicle_model" name="vehicle_model" value="${isEditing && person.vehicle_model ? person.vehicle_model : ''}">
-            </div>
-            <div class="form-group">
-                <label for="license_plate">Immatriculation:</label>
-                <input type="text" id="license_plate" name="license_plate" value="${isEditing && person.license_plate ? person.license_plate : ''}">
-            </div>
-            <div class="form-group">
-                <button type="submit" class="btn-primary">${isEditing ? 'Mettre à jour' : 'Créer'}</button>
-                <button type="button" id="cancel-form" class="btn-secondary">Annuler</button>
-            </div>
-            <div id="form-error" class="error-message"></div>
-        </form>
-    </div>
+      <form id="${id ? 'edit-person-form' : 'create-person-form'}" class="form">
+        ${id ? `<input type="hidden" name="id" value="${id}">` : ''}
+        
+        <!-- Champ caché pour user_id puisque nous sommes sur la page profil -->
+        <input type="hidden" name="user_id" value="${userId}">
+        
+        <div class="form-group">
+          <label for="first_name">Prénom :</label>
+          <input type="text" name="first_name" id="first_name" value="${firstName}" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="last_name">Nom :</label>
+          <input type="text" name="last_name" id="last_name" value="${lastName}" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="address">Adresse :</label>
+          <input type="text" name="address" id="address" value="${address}" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="zip_code">Code postal :</label>
+          <input type="text" name="zip_code" id="zip_code" value="${zipCode}" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="city">Ville :</label>
+          <input type="text" name="city" id="city" value="${city}" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="apartment_number">Numéro d'appartement :</label>
+          <input type="text" name="apartment_number" id="apartment_number" value="${apartmentNumber}">
+        </div>
+        
+        <div class="form-group">
+          <label for="phone_number">Téléphone :</label>
+          <input type="text" name="phone_number" id="phone_number" value="${phoneNumber}">
+        </div>
+        
+        <div class="form-group">
+          <label for="vehicle_brand">Marque du véhicule :</label>
+          <input type="text" name="vehicle_brand" id="vehicle_brand" value="${vehicleBrand}">
+        </div>
+        
+        <div class="form-group">
+          <label for="vehicle_model">Modèle du véhicule :</label>
+          <input type="text" name="vehicle_model" id="vehicle_model" value="${vehicleModel}">
+        </div>
+        
+        <div class="form-group">
+          <label for="license_plate">Plaque d'immatriculation :</label>
+          <input type="text" name="license_plate" id="license_plate" value="${licensePlate}">
+        </div>
+        
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">${id ? 'Mettre à jour' : 'Créer'}</button>
+          <button type="button" id="cancel-form" class="btn-secondary">Annuler</button>
+        </div>
+        <div id="person-form-error" class="error-message"></div>
+      </form>
     `;
 }
 
