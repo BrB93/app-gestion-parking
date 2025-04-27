@@ -2,6 +2,7 @@ import { renderNavbar } from './views/navbarView.js';
 import { loadUsers, getUser } from "./controllers/userController.js";
 import { loadParkingSpots } from "./controllers/parkingSpotController.js";
 import { loadPersons } from "./controllers/personController.js";
+import { loadReservations } from "./controllers/reservationController.js";
 import { Router } from './core/router.js';
 import { checkAuthStatus, initLoginForm, checkProtectedRoute, getCurrentUser } from './controllers/authController.js';
 import { renderUserForm } from './views/userView.js';
@@ -133,7 +134,6 @@ document.addEventListener("DOMContentLoaded", () => {
           if (content) {
             content.innerHTML = '<h1>Liste des utilisateurs</h1><div id="user-list"></div>';
             try {
-              await new Promise(resolve => requestAnimationFrame(resolve));
               await loadUsers();
             } catch (error) {
               console.error("Erreur lors du chargement des utilisateurs:", error);
@@ -166,7 +166,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (checkProtectedRoute()) {
           const content = document.getElementById('app-content');
           if (content) {
-            content.innerHTML = '<h1>Gestion des Places de Parking</h1><div id="parking-spot-list"></div>';
+            content.innerHTML = '<h1>Places de Parking</h1><div id="parking-spot-list"></div>';
             try {
               await loadParkingSpots();
             } catch (error) {
@@ -277,9 +277,43 @@ document.addEventListener("DOMContentLoaded", () => {
       controller: () => {
         initLoginForm();
       }
+    },
+    {
+      path: '/app-gestion-parking/public/reservation',
+      controller: async () => {
+        if (checkProtectedRoute()) {
+          const content = document.getElementById('app-content');
+          if (content) {
+            content.innerHTML = '<h1>Mes Réservations</h1><div id="reservation-list"></div>';
+            try {
+              await loadReservations();
+            } catch (error) {
+              console.error("Erreur lors du chargement des réservations:", error);
+              content.innerHTML += `<p class="error-message">Une erreur est survenue lors du chargement des réservations.</p>`;
+            }
+          }
+        }
+      }
+    },
+    {
+      path: '/app-gestion-parking/public/reservations',
+      controller: async () => {
+        if (checkProtectedRoute()) {
+          const content = document.getElementById('app-content');
+          if (content) {
+            content.innerHTML = '<h1>Mes Réservations</h1><div id="reservation-list"></div>';
+            try {
+              await loadReservations();
+            } catch (error) {
+              console.error("Erreur lors du chargement des réservations:", error);
+              content.innerHTML += `<p class="error-message">Une erreur est survenue lors du chargement des réservations.</p>`;
+            }
+          }
+        }
+      }
     }
   ];
-
+  
   const router = new Router(routes);
   router.init();
 });

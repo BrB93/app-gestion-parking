@@ -39,7 +39,6 @@ class PersonController {
         
         echo json_encode($personsArray);
     }
-
     public function show($id) {
         Auth::requireAuthentication();
         

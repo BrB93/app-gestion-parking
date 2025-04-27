@@ -6,6 +6,7 @@ use Controllers\UserController;
 use Controllers\AuthController;
 use Controllers\ParkingSpotController;
 use Controllers\PersonController;
+use Controllers\ReservationController;
 
 
 $uri = $_SERVER['REQUEST_URI'];
@@ -157,6 +158,31 @@ if ($uri === '/app-gestion-parking/public/persons') {
     exit;
 }
 
+// réservations
+if (preg_match('#^/app-gestion-parking/public/api/reservations$#', $uri)) {
+    $controller = new ReservationController();
+    $controller->index(); // Liste toutes les réservations
+    exit;
+}
+
+if ($uri === '/app-gestion-parking/public/api/reservations/create') {
+    $controller = new ReservationController();
+    $controller->create(); // Crée une réservation
+    exit;
+}
+
+if (preg_match('#^/app-gestion-parking/public/api/reservations/(\d+)$#', $uri, $matches)) {
+    $controller = new ReservationController();
+    $controller->show($matches[1]); // Détail d'une réservation
+    exit;
+}
+
+if (preg_match('#^/app-gestion-parking/public/api/reservations/(\d+)/cancel$#', $uri, $matches)) {
+    $controller = new ReservationController();
+    $controller->cancel($matches[1]); // Annule une réservation
+    exit;
+}
+
 // HTML
 if ($uri === '/app-gestion-parking/public/' || $uri === '/app-gestion-parking/public/index.php') {
     ?>
@@ -201,3 +227,4 @@ http_response_code(404);
 echo json_encode(['error' => 'Not Found']);
 exit;
 ?>
+

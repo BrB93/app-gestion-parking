@@ -13,6 +13,8 @@ export function renderNavbar() {
         ` : ''}
         <a href="/app-gestion-parking/public/parking" data-route="/app-gestion-parking/public/parking">Places de parking</a>
         <a href="/app-gestion-parking/public/vehicles" data-route="/app-gestion-parking/public/vehicles">Véhicules</a>
+        <!-- Onglet Réservations ajouté ici -->
+        ${user ? `<a href="/app-gestion-parking/public/reservation" data-route="/app-gestion-parking/public/reservation">Réservations</a>` : ''}
         ${user ? `<a href="/app-gestion-parking/public/profile" data-route="/app-gestion-parking/public/profile">Mon Profil</a>` : ''}
       </div>
     `;
