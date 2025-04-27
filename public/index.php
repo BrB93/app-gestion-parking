@@ -67,8 +67,8 @@ if (preg_match('#^/app-gestion-parking/public/api/parking-spots$#', $uri)) {
     exit;
 }
 
-if (preg_match('#^/app-gestion-parking/public/api/parking-spots/(\d+)$#', $uri, $matches)) {
-    $controller = new ParkingSpotController();
+if (preg_match('#^/app-gestion-parking/public/api/persons/(\d+)$#', $uri, $matches)) {
+    $controller = new PersonController();
     $controller->show($matches[1]);
     exit;
 }
@@ -103,7 +103,19 @@ if ($uri === '/app-gestion-parking/public/api/parking-spots/form-data') {
     exit;
 }
 
+if (preg_match('#^/app-gestion-parking/public/api/parking-spots/(\d+)$#', $uri, $matches)) {
+    $controller = new ParkingSpotController();
+    $controller->show($matches[1]);
+    exit;
+}
+
 // personnes
+if (preg_match('#^/app-gestion-parking/public/api/persons/(\d+)$#', $uri, $matches)) {
+    $controller = new PersonController();
+    $controller->show($matches[1]);
+    exit;
+}
+
 if (preg_match('#^/app-gestion-parking/public/api/persons$#', $uri)) {
     $controller = new PersonController();
     $controller->index();
@@ -137,6 +149,11 @@ if (preg_match('#^/app-gestion-parking/public/api/persons/(\d+)/delete$#', $uri,
 if (preg_match('#^/app-gestion-parking/public/api/persons/by-user/(\d+)$#', $uri, $matches)) {
     $controller = new PersonController();
     $controller->getByUserId($matches[1]);
+    exit;
+}
+
+if ($uri === '/app-gestion-parking/public/persons') {
+    require_once __DIR__ . '/persons.php';
     exit;
 }
 

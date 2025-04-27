@@ -157,51 +157,61 @@ class PersonController {
             if (isset($data['first_name'])) {
                 $existingPerson->setFirstName($data['first_name']);
             }
-            
+                
             if (isset($data['last_name'])) {
                 $existingPerson->setLastName($data['last_name']);
             }
-            
+                
             if (isset($data['address'])) {
                 $existingPerson->setAddress($data['address']);
             }
-            
+                
             if (isset($data['zip_code'])) {
                 $existingPerson->setZipCode($data['zip_code']);
             }
-            
+                
             if (isset($data['city'])) {
                 $existingPerson->setCity($data['city']);
             }
-            
+                
             if (isset($data['apartment_number'])) {
                 $existingPerson->setApartmentNumber($data['apartment_number']);
             }
-            
+                
             if (isset($data['phone_number'])) {
                 $existingPerson->setPhoneNumber($data['phone_number']);
             }
-            
+                
             if (isset($data['vehicle_brand'])) {
                 $existingPerson->setVehicleBrand($data['vehicle_brand']);
             }
-            
+                
             if (isset($data['vehicle_model'])) {
                 $existingPerson->setVehicleModel($data['vehicle_model']);
             }
-            
+                
             if (isset($data['license_plate'])) {
                 $existingPerson->setLicensePlate($data['license_plate']);
             }
+
+            $personData = [
+                'first_name' => $existingPerson->getFirstName(),
+                'last_name' => $existingPerson->getLastName(),
+                'address' => $existingPerson->getAddress(),
+                'zip_code' => $existingPerson->getZipCode(),
+                'city' => $existingPerson->getCity(),
+                'apartment_number' => $existingPerson->getApartmentNumber(),
+                'phone_number' => $existingPerson->getPhoneNumber(),
+                'vehicle_brand' => $existingPerson->getVehicleBrand(),
+                'vehicle_model' => $existingPerson->getVehicleModel(),
+                'license_plate' => $existingPerson->getLicensePlate()
+            ];
             
-            $updatedPerson = $this->personRepo->updatePerson($existingPerson);
+            $result = $this->personRepo->updatePerson($id, $personData);
             
             header('Content-Type: application/json');
             echo json_encode(['success' => true, 'person' => [
-                'id' => $updatedPerson->getId(),
-                'user_id' => $updatedPerson->getUserId(),
-                'first_name' => $updatedPerson->getFirstName(),
-                'last_name' => $updatedPerson->getLastName()
+                'last_name' => $existingPerson->getLastName()
             ]]);
         } catch (Exception $e) {
             http_response_code(500);

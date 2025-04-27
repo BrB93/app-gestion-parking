@@ -1,5 +1,7 @@
 import { fetchJSON } from "../core/fetchWrapper.js";
 import { getCurrentUser } from "../controllers/authController.js";
+import { setupParkingSpotEvents } from "../controllers/parkingSpotController.js";
+
 
 export function renderParkingSpots(spots) {
     const container = document.getElementById("parking-spot-list");
@@ -48,15 +50,64 @@ export function renderParkingSpots(spots) {
             <button id="reset-filter" class="btn-secondary">Réinitialiser</button>
         </div>
     `;
+    
     container.appendChild(filterSection);
     
-    const spotsGrid = document.createElement("div");
-    spotsGrid.className = "parking-grid";
-    container.appendChild(spotsGrid);
+    setupFilterEvents(spots, container);
     
-    renderSpots(spots, spotsGrid);
+    renderSpotsAndAttachEvents(spots, container);
+}
+
+function renderSpotsAndAttachEvents(spots, container) {
+    console.log("renderSpotsAndAttachEvents appelé avec", spots.length, "places");
     
-    setupFilterEvents(spots, spotsGrid);
+    if (spots.length === 0) {
+        container.innerHTML += "<p>Aucune place de parking trouvée.</p>";
+        return;
+    }
+    
+    fetchJSON("/app-gestion-parking/public/api/parking-spots/form-data")
+        .then(formData => {
+            console.log("Données de formulaire récupérées:", formData);
+            const personsMap = {};
+            if (formData.persons) {
+                formData.persons.forEach(person => {
+                    personsMap[person.id] = person.name;
+                });
+            }
+
+            const fragment = document.createDocumentFragment();
+            
+            spots.forEach(spot => {
+                const spotElement = document.createElement("div");
+                spotElement.className = `parking-spot ${spot.getStatusClass()}`;
+                
+                spotElement.innerHTML = `
+                    <h3>Place ${spot.spot_number}</h3>
+                    <p>Type: ${spot.getTypeLabel()}</p>
+                    <p>Statut: <span class="${spot.getStatusClass()}">${spot.status}</span></p>
+                    ${spot.owner_id && personsMap[spot.owner_id] ? 
+                        `<p>Propriétaire: ${personsMap[spot.owner_id]}</p>` : ''}
+                    <div class="spot-actions">
+                        <button class="btn-edit-spot" data-id="${spot.id}">Modifier</button>
+                        <button class="btn-delete-spot" data-id="${spot.id}">Supprimer</button>
+                    </div>
+                `;
+                
+                fragment.appendChild(spotElement);
+            });
+            
+            container.appendChild(fragment);
+            
+            console.log("Toutes les places ont été rendues, appel de setupParkingSpotEvents");
+            setTimeout(() => {
+                setupParkingSpotEvents();
+            }, 100);
+        })
+        .catch(error => {
+            console.error("Error fetching additional data:", error);
+            container.innerHTML += `<p class="error-message">Erreur de chargement des données: ${error.message}</p>`;
+        });
 }
 
 function renderSpots(spots, container) {
@@ -165,7 +216,6 @@ export function renderParkingSpotForm(spot = null, formData = null) {
     
     if (!isAdmin) return "<p>Vous n'avez pas les droits pour effectuer cette action.</p>";
     
-    // Ajout d'un log pour déboguer
     console.log("Données du formulaire:", formData);
     
     return `

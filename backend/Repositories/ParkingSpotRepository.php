@@ -102,8 +102,12 @@ class ParkingSpotRepository {
         
         foreach ($data as $key => $value) {
             if (in_array($key, ['spot_number', 'type', 'status', 'owner_id', 'pricing_id'])) {
-                $setClauses[] = "$key = :$key";
-                $params[":$key"] = $value;
+                if (($key === 'owner_id' || $key === 'pricing_id') && ($value === '' || $value === null)) {
+                    $setClauses[] = "$key = NULL";
+                } else {
+                    $setClauses[] = "$key = :$key";
+                    $params[":$key"] = $value;
+                }
             }
         }
         
@@ -116,7 +120,6 @@ class ParkingSpotRepository {
         
         return $stmt->execute($params);
     }
-    
     public function deleteSpot(int $id): bool {
         $stmt = $this->db->prepare("DELETE FROM parking_spots WHERE id = :id");
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);

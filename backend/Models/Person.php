@@ -31,4 +31,14 @@ class Person {
     public function getVehicleBrand(): ?string { return $this->vehicle_brand; }
     public function getVehicleModel(): ?string { return $this->vehicle_model; }
     public function getLicensePlate(): ?string { return $this->license_plate; }
+    public function setFirstName(string $firstName): void { $this->first_name = $firstName; }
+    public function setLastName(string $lastName): void { $this->last_name = $lastName; }
+    public function setAddress(string $address): void { $this->address = $address; }
+    public function setZipCode(string $zipCode): void { $this->zip_code = $zipCode; }
+    public function setCity(string $city): void { $this->city = $city; }
+    public function setApartmentNumber(?string $apartmentNumber): void { $this->apartment_number = $apartmentNumber; }
+    public function setPhoneNumber(?string $phoneNumber): void { $this->phone_number = $phoneNumber; }
+    public function setVehicleBrand(?string $vehicleBrand): void { $this->vehicle_brand = $vehicleBrand; }
+    public function setVehicleModel(?string $vehicleModel): void { $this->vehicle_model = $vehicleModel; }
+    public function setLicensePlate(?string $licensePlate): void { $this->license_plate = $licensePlate; }
 }

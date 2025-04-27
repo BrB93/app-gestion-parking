@@ -87,8 +87,10 @@ export async function getPerson(id) {
         return new Person(
             data.id,
             data.user_id,
+            data.first_name,
+            data.last_name,
             data.address,
-            data.zip_code,
+            data.zip_code, 
             data.city,
             data.apartment_number,
             data.phone_number,
@@ -189,7 +191,7 @@ function setupFormSubmission(id = null) {
     const isEditing = id !== null;
     const formId = isEditing ? 'edit-person-form' : 'create-person-form';
     const form = document.getElementById(formId);
-    const errorElement = document.getElementById('form-error');
+    const errorElement = document.getElementById('person-form-error');
 
     document.getElementById('cancel-form').addEventListener('click', () => {
         loadPersons();
