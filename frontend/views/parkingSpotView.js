@@ -72,43 +72,45 @@ export function showReservationForm(spotId) {
         return;
     }
     
-    import('../controllers/reservationController.js').then(module => {
-        modalContainer.innerHTML = module.renderReservationForm({
-            spotId: spotId,
-            userId: currentUser.id
-        });
-        
+    Promise.all([
+        import('../controllers/reservationController.js'),
+        import('../views/reservationView.js')
+    ]).then(([controllerModule, viewModule]) => {
+        // Utiliser renderReservationForm depuis le module de vue
+        modalContainer.innerHTML = viewModule.renderReservationForm({ spotId: spotId });
         document.body.appendChild(modalContainer);
         
-        document.getElementById('cancel-reservation-form').addEventListener('click', () => {
-            document.body.removeChild(modalContainer);
-        });
+        const form = document.getElementById('reservation-form');
+        const cancelBtn = document.getElementById('cancel-reservation-form');
         
-        document.getElementById('reservation-form').addEventListener('submit', async (e) => {
+        // Configurer les événements du formulaire
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const formData = new FormData(e.target);
-            const reservationData = {
-                spot_id: formData.get('spot_id'),
-                start_time: formData.get('start_time'),
-                end_time: formData.get('end_time')
-            };
+            const formData = new FormData(form);
+            const reservationData = {};
             
-            try {
-                const result = await module.createReservation(reservationData);
-                if (result.success) {
-                    alert("Réservation effectuée avec succès!");
-                    document.body.removeChild(modalContainer);
-                    window.location.reload();
-                } else {
-                    document.getElementById('form-error').textContent = result.error || "Erreur lors de la création de la réservation";
-                }
-            } catch (error) {
-                console.error("Erreur:", error);
-                document.getElementById('form-error').textContent = "Une erreur est survenue lors de la communication avec le serveur";
+            formData.forEach((value, key) => {
+                reservationData[key] = value;
+            });
+            
+            reservationData.user_id = currentUser.id;
+            
+            // Utiliser le contrôleur pour créer la réservation
+            const result = await controllerModule.createReservation(reservationData);
+            
+            if (result.error) {
+                document.getElementById('form-error').textContent = result.error;
+            } else if (result.success) {
+                document.body.removeChild(modalContainer);
+                window.location.reload();
             }
         });
+        
+        cancelBtn.addEventListener('click', () => {
+            document.body.removeChild(modalContainer);
+        });
     }).catch(err => {
-        console.error("Erreur lors du chargement du module de réservation:", err);
+        console.error('Erreur lors du chargement du module de réservation:', err);
     });
 }
 
