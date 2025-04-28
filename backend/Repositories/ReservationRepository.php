@@ -141,4 +141,41 @@ class ReservationRepository {
         }
         return $reservations;
     }
+
+    public function updateStatus(int $id, string $status): bool {
+        if (!in_array($status, ['en_attente', 'confirmee', 'annulee', 'terminee'])) {
+            return false;
+        }
+        
+        $stmt = $this->db->prepare("UPDATE reservations SET status = :status WHERE id = :id");
+        $stmt->bindParam(':status', $status, PDO::PARAM_STR);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        
+        return $stmt->execute();
+    }
+
+    public function getReservationsByOwnerId(int $ownerId): array {
+        $sql = "SELECT r.* FROM reservations r
+                JOIN parking_spots ps ON r.spot_id = ps.id
+                WHERE ps.owner_id = :owner_id
+                ORDER BY r.start_time DESC";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':owner_id', $ownerId, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        $reservations = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $reservations[] = new Reservation(
+                $row['id'],
+                $row['user_id'],
+                $row['spot_id'],
+                $row['start_time'],
+                $row['end_time'],
+                $row['status'],
+                $row['created_at']
+            );
+        }
+        return $reservations;
+    }
 }

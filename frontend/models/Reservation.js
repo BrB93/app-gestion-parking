@@ -1,13 +1,14 @@
 export class Reservation {
-    constructor(id, user_id, spot_id, start_time, end_time, status = 'en_attente', created_at = null) {
-      this.id = id;
-      this.user_id = user_id;
-      this.spot_id = spot_id;
-      this.start_time = new Date(start_time);
-      this.end_time = new Date(end_time);
-      this.status = status;
-      this.created_at = created_at ? new Date(created_at) : new Date();
-    }
+  constructor(id, user_id, spot_id, start_time, end_time, status = 'en_attente', created_at = null, is_owner_spot = false) {
+    this.id = id;
+    this.user_id = user_id;
+    this.spot_id = spot_id;
+    this.start_time = new Date(start_time);
+    this.end_time = new Date(end_time);
+    this.status = status;
+    this.created_at = created_at ? new Date(created_at) : new Date();
+    this.is_owner_spot = is_owner_spot;
+  }
   
     isPending() {
       return this.status === 'en_attente';

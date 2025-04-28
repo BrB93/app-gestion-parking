@@ -6,17 +6,34 @@ import { validateReservationData } from "../core/validator.js";
 
 export async function loadReservations() {
     try {
-        const data = await fetchJSON("/app-gestion-parking/public/api/reservations");
-        const reservations = data.map(res => new Reservation(
-            res.id,
-            res.user_id,
-            res.spot_id,
-            res.start_time,
-            res.end_time,
-            res.status,
-            res.created_at
-        ));
-        renderReservations(reservations);
+        const response = await fetchJSON("/app-gestion-parking/public/api/reservations");
+        
+        const data = Array.isArray(response) ? response : [];
+        console.log("Données de réservations reçues:", response);
+        
+        const myReservations = [];
+        const spotReservations = [];
+        
+        data.forEach(res => {
+            const reservation = new Reservation(
+                res.id,
+                res.user_id,
+                res.spot_id,
+                res.start_time,
+                res.end_time,
+                res.status,
+                res.created_at,
+                res.is_owner_spot
+            );
+            
+            if (res.is_owner_spot) {
+                spotReservations.push(reservation);
+            } else {
+                myReservations.push(reservation);
+            }
+        });
+        
+        renderReservations(myReservations, spotReservations);
     } catch (error) {
         console.error("Erreur lors du chargement des réservations :", error);
     }
@@ -157,4 +174,88 @@ function setupFormSubmission(id = null) {
             window.location.href = '/app-gestion-parking/public/reservations';
         }
     });
+}
+
+export async function showEditReservationForm(reservationId) {
+    try {
+        const reservation = await getReservation(reservationId);
+        if (!reservation) {
+            alert("Réservation non trouvée");
+            return;
+        }
+        
+        const startTime = new Date(reservation.start_time)
+            .toISOString().slice(0, 16); // Format YYYY-MM-DDThh:mm
+        const endTime = new Date(reservation.end_time)
+            .toISOString().slice(0, 16);
+        
+        const container = document.createElement('div');
+        container.className = 'modal-container';
+        container.id = 'reservation-modal';
+        
+        container.innerHTML = `
+            <div class="form-container">
+                <h2>Modifier la réservation</h2>
+                <form id="edit-reservation-form" data-id="${reservationId}">
+                    <input type="hidden" name="spot_id" value="${reservation.spot_id}">
+                    <input type="hidden" name="user_id" value="${reservation.user_id}">
+                    <div class="form-group">
+                        <label for="start_time">Date de début:</label>
+                        <input type="datetime-local" name="start_time" id="start_time" value="${startTime}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="end_time">Date de fin:</label>
+                        <input type="datetime-local" name="end_time" id="end_time" value="${endTime}" required>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn-primary">Mettre à jour</button>
+                        <button type="button" id="cancel-edit-form" class="btn-secondary">Annuler</button>
+                    </div>
+                    <div id="form-error" class="error-message"></div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(container);
+        
+        const form = document.getElementById('edit-reservation-form');
+        const cancelBtn = document.getElementById('cancel-edit-form');
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            const reservationData = {
+                spot_id: formData.get('spot_id'),
+                start_time: formData.get('start_time'),
+                end_time: formData.get('end_time')
+            };
+            
+            const validation = validateReservationData(reservationData);
+            if (!validation.isValid) {
+                let errorMessage = "Veuillez corriger les erreurs suivantes:\n";
+                for (const field in validation.errors) {
+                    errorMessage += `- ${validation.errors[field]}\n`;
+                }
+                document.getElementById('form-error').textContent = errorMessage;
+                return;
+            }
+            
+            const result = await updateReservation(reservationId, reservationData);
+            if (result.success) {
+                alert('Réservation mise à jour avec succès !');
+                document.body.removeChild(container);
+                window.location.reload();
+            } else {
+                document.getElementById('form-error').textContent = result.error || 'Une erreur est survenue';
+            }
+        });
+        
+        cancelBtn.addEventListener('click', () => {
+            document.body.removeChild(container);
+        });
+    } catch (error) {
+        console.error("Erreur lors du chargement du formulaire de modification:", error);
+        alert("Une erreur est survenue lors du chargement du formulaire de modification.");
+    }
 }

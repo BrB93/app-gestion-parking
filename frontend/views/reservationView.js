@@ -4,36 +4,69 @@ import { getCurrentUser } from "../controllers/authController.js";
  * Affiche la liste des réservations
  * @param {Reservation[]} reservations 
  */
-export function renderReservations(reservations) {
+export function renderReservations(myReservations, spotReservations = []) {
   const container = document.getElementById("reservation-list");
   if (!container) return;
 
   container.innerHTML = "";
+  const currentUser = getCurrentUser();
+  const isOwner = currentUser && currentUser.role === 'owner';
 
-  if (reservations.length === 0) {
+  if (myReservations.length === 0 && spotReservations.length === 0) {
     container.innerHTML = "<p>Aucune réservation trouvée.</p>";
     return;
   }
 
-  const fragment = document.createDocumentFragment();
-  reservations.forEach(reservation => {
-    const div = document.createElement("div");
-    div.className = `reservation-item ${reservation.getStatusClass()}`;
+  if (myReservations.length > 0) {
+    const myReservationsSection = document.createElement("div");
+    myReservationsSection.className = "reservation-section";
+    myReservationsSection.innerHTML = "<h2>Mes réservations</h2>";
+    
+    const fragment = document.createDocumentFragment();
+    myReservations.forEach(reservation => {
+      const div = document.createElement("div");
+      div.className = `reservation-item ${reservation.getStatusClass()}`;
 
-    div.innerHTML = `
-      <h3>Réservation #${reservation.id}</h3>
-      <p>Utilisateur ID: ${reservation.user_id}</p>
-      <p>Place ID: ${reservation.spot_id}</p>
-      <p>Période: ${reservation.getFormattedDateRange()}</p>
-      <p>Statut: <span class="${reservation.getStatusClass()}">${reservation.getStatusLabel()}</span></p>
-      <div class="reservation-actions">
-        ${renderActions(reservation)}
-      </div>
-    `;
-    fragment.appendChild(div);
-  });
+      div.innerHTML = `
+        <h3>Réservation #${reservation.id}</h3>
+        <p>Place ID: ${reservation.spot_id}</p>
+        <p>Période: ${reservation.getFormattedDateRange()}</p>
+        <p>Statut: <span class="${reservation.getStatusClass()}">${reservation.getStatusLabel()}</span></p>
+        <div class="reservation-actions">
+          ${renderActions(reservation)}
+        </div>
+      `;
+      fragment.appendChild(div);
+    });
+    
+    myReservationsSection.appendChild(fragment);
+    container.appendChild(myReservationsSection);
+  }
 
-  container.appendChild(fragment);
+  if (isOwner && spotReservations.length > 0) {
+    const spotReservationsSection = document.createElement("div");
+    spotReservationsSection.className = "reservation-section";
+    spotReservationsSection.innerHTML = "<h2>Réservations de mes places de parking</h2>";
+    
+    const fragment = document.createDocumentFragment();
+    spotReservations.forEach(reservation => {
+      const div = document.createElement("div");
+      div.className = `reservation-item owner-spot ${reservation.getStatusClass()}`;
+
+      div.innerHTML = `
+        <h3>Réservation #${reservation.id}</h3>
+        <p>Utilisateur ID: ${reservation.user_id}</p>
+        <p>Place ID: ${reservation.spot_id}</p>
+        <p>Période: ${reservation.getFormattedDateRange()}</p>
+        <p>Statut: <span class="${reservation.getStatusClass()}">${reservation.getStatusLabel()}</span></p>
+      `;
+      fragment.appendChild(div);
+    });
+    
+    spotReservationsSection.appendChild(fragment);
+    container.appendChild(spotReservationsSection);
+  }
+
   attachReservationEvents();
 }
 
@@ -47,22 +80,50 @@ function renderActions(reservation) {
 
   if ((isUser || isAdmin) && reservation.isPending()) {
     return `
+      <button class="btn-edit-reservation" data-id="${reservation.id}">Modifier</button>
       <button class="btn-cancel-reservation" data-id="${reservation.id}">Annuler</button>
     `;
   }
 
   return "";
 }
-
 function attachReservationEvents() {
   document.querySelectorAll('.btn-cancel-reservation').forEach(button => {
-    button.addEventListener('click', () => {
+    button.addEventListener('click', async () => {
       const id = button.getAttribute('data-id');
       const confirmed = confirm("Voulez-vous vraiment annuler cette réservation ?");
       if (confirmed) {
-        // Cette fonction devra être définie dans le controller
-        window.dispatchEvent(new CustomEvent("cancelReservation", { detail: { reservationId: id } }));
+        try {
+          const response = await fetch(`/app-gestion-parking/public/api/reservations/${id}/cancel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            alert("Réservation annulée avec succès !");
+            window.location.reload();
+          } else {
+            alert(`Erreur: ${result.error || "Une erreur est survenue"}`);
+          }
+        } catch (error) {
+          console.error("Erreur lors de l'annulation:", error);
+          alert("Une erreur est survenue lors de l'annulation de la réservation.");
+        }
       }
+    });
+  });
+
+  document.querySelectorAll('.btn-edit-reservation').forEach(button => {
+    button.addEventListener('click', async () => {
+      const reservationId = button.getAttribute('data-id');
+      import('../controllers/reservationController.js').then(module => {
+        module.showEditReservationForm(reservationId);
+      }).catch(err => {
+        console.error("Erreur lors de l'import du contrôleur:", err);
+      });
     });
   });
 }
@@ -110,3 +171,5 @@ export function renderDeleteConfirmation(reservationId) {
       </div>
     `;
   }
+
+

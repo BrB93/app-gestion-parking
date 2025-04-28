@@ -84,6 +84,19 @@ class ParkingSpotController {
         
         $status = $data['status'] ?? 'libre';
         $owner_id = (!empty($data['owner_id'])) ? (int)$data['owner_id'] : null;
+        
+        // Vérifier que l'utilisateur existe
+        if ($owner_id !== null) {
+            $userRepo = new \Repositories\UserRepository();
+            $owner = $userRepo->findUserById($owner_id);
+            
+            if (!$owner) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Le propriétaire sélectionné n\'existe pas']);
+                return;
+            }
+        }
+        
         $pricing_id = (!empty($data['pricing_id'])) ? (int)$data['pricing_id'] : null;
         
         $result = $this->spotRepo->createSpot(
@@ -165,16 +178,26 @@ class ParkingSpotController {
     public function getFormData() {
         Auth::requireAuthentication();
         
+        $userRepo = new \Repositories\UserRepository();
+        $users = $userRepo->getAllUsers();
+        
         $personRepo = new \Repositories\PersonRepository();
         $persons = $personRepo->getAllPersons();
+        
         $pricingRepo = new \Repositories\PricingRepository();
         $pricings = $pricingRepo->getAllPricings();
+        
+        // Créer un tableau associatif des personnes par user_id
+        $personsByUserId = [];
+        foreach ($persons as $person) {
+            $personsByUserId[$person->getUserId()] = $person;
+        }
         
         header('Content-Type: application/json');
         echo json_encode([
             'persons' => array_map(function($person) {
                 return [
-                    'id' => $person->getId(),
+                    'id' => $person->getUserId(), // Utiliser l'ID de l'utilisateur, pas celui de la personne
                     'name' => $person->getFirstName() . ' ' . $person->getLastName(),
                     'user_id' => $person->getUserId()
                 ];

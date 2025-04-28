@@ -183,6 +183,17 @@ if (preg_match('#^/app-gestion-parking/public/api/reservations/(\d+)/cancel$#', 
     exit;
 }
 
+if ($uri === '/app-gestion-parking/public/reservations') {
+    require_once __DIR__ . '/reservations.php';
+    exit;
+}
+
+if (preg_match('#^/app-gestion-parking/public/api/reservations/(\d+)/update$#', $uri, $matches)) {
+    $controller = new ReservationController();
+    $controller->update($matches[1]); // Met à jour une réservation
+    exit;
+}
+
 // HTML
 if ($uri === '/app-gestion-parking/public/' || $uri === '/app-gestion-parking/public/index.php') {
     ?>

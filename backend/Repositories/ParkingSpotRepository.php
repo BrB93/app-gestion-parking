@@ -149,4 +149,17 @@ class ParkingSpotRepository {
         }
         return $spots;
     }
+    
+    public function updateSpotStatus(int $spotId, string $status): bool {
+        if (!in_array($status, ['libre', 'occupee', 'reservee'])) {
+            return false;
+        }
+        
+        $stmt = $this->db->prepare("UPDATE parking_spots SET status = :status WHERE id = :id");
+        $stmt->bindParam(':status', $status, PDO::PARAM_STR);
+        $stmt->bindParam(':id', $spotId, PDO::PARAM_INT);
+        
+        return $stmt->execute();
+    }
+
 }

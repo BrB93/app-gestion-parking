@@ -1,33 +1,29 @@
 import { fetchJSON } from "../core/fetchWrapper.js";
-import { getCurrentUser } from "../controllers/authController.js";
+import { getCurrentUser } from '../controllers/authController.js';
 import { setupParkingSpotEvents } from "../controllers/parkingSpotController.js";
 
 
 export function renderParkingSpots(spots) {
     const container = document.getElementById("parking-spot-list");
-    if (!container) return;
+    if (!container) {
+        console.error("Conteneur 'parking-spot-list' introuvable");
+        return;
+    }
     
     container.innerHTML = "";
     
-    const currentUser = getCurrentUser();
-    const isAdmin = currentUser && currentUser.role === 'admin';
-    const isOwner = currentUser && currentUser.role === 'owner';
+    // Ajout du bouton de création pour tous les utilisateurs
+    const createBtn = document.createElement("button");
+    createBtn.className = "btn-primary";
+    createBtn.id = "create-spot-btn";
+    createBtn.textContent = "Créer une nouvelle place";
+    container.appendChild(createBtn);
     
-    if (isAdmin) {
-        const createBtn = document.createElement("button");
-        createBtn.className = "btn-primary";
-        createBtn.id = "create-spot-btn";
-        createBtn.textContent = "Créer une nouvelle place";
-        container.appendChild(createBtn);
-    }
+    // Ajout d'un espace après le bouton
+    container.appendChild(document.createElement("br"));
+    container.appendChild(document.createElement("br"));
     
-    if (isOwner) {
-        const ownerMessage = document.createElement("div");
-        ownerMessage.className = "owner-message info-banner";
-        ownerMessage.innerHTML = "<p>Vous consultez uniquement les places de parking dont vous êtes propriétaire.</p>";
-        container.appendChild(ownerMessage);
-    }
-    
+    // Section de filtrage
     const filterSection = document.createElement("div");
     filterSection.className = "filter-section";
     filterSection.innerHTML = `
@@ -53,141 +49,144 @@ export function renderParkingSpots(spots) {
     
     container.appendChild(filterSection);
     
-    setupFilterEvents(spots, container);
+    // Gestion de la référence filterSection pour setupFilterEvents
+    const filterSectionRef = filterSection;
     
-    renderSpotsAndAttachEvents(spots, container);
+    // Configuration des événements de filtrage
+    setupFilterEvents(spots, container, filterSectionRef);
+    
+    // Rendu des places
+    renderSpotsGrid(spots, container);
 }
 
-function renderSpotsAndAttachEvents(spots, container) {
-    console.log("renderSpotsAndAttachEvents appelé avec", spots.length, "places");
+export function showReservationForm(spotId) {
+    const modalContainer = document.createElement('div');
+    modalContainer.className = 'modal-container';
+    modalContainer.id = 'reservation-modal';
     
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+        alert("Vous devez être connecté pour effectuer une réservation");
+        return;
+    }
+    
+    import('../controllers/reservationController.js').then(module => {
+        modalContainer.innerHTML = module.renderReservationForm({
+            spotId: spotId,
+            userId: currentUser.id
+        });
+        
+        document.body.appendChild(modalContainer);
+        
+        document.getElementById('cancel-reservation-form').addEventListener('click', () => {
+            document.body.removeChild(modalContainer);
+        });
+        
+        document.getElementById('reservation-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const reservationData = {
+                spot_id: formData.get('spot_id'),
+                start_time: formData.get('start_time'),
+                end_time: formData.get('end_time')
+            };
+            
+            try {
+                const result = await module.createReservation(reservationData);
+                if (result.success) {
+                    alert("Réservation effectuée avec succès!");
+                    document.body.removeChild(modalContainer);
+                    window.location.reload();
+                } else {
+                    document.getElementById('form-error').textContent = result.error || "Erreur lors de la création de la réservation";
+                }
+            } catch (error) {
+                console.error("Erreur:", error);
+                document.getElementById('form-error').textContent = "Une erreur est survenue lors de la communication avec le serveur";
+            }
+        });
+    }).catch(err => {
+        console.error("Erreur lors du chargement du module de réservation:", err);
+    });
+}
+
+function renderSpotsGrid(spots, container) {
     if (spots.length === 0) {
         container.innerHTML += "<p>Aucune place de parking trouvée.</p>";
         return;
     }
     
-    fetchJSON("/app-gestion-parking/public/api/parking-spots/form-data")
-        .then(formData => {
-            console.log("Données de formulaire récupérées:", formData);
-            const personsMap = {};
-            if (formData.persons) {
-                formData.persons.forEach(person => {
-                    personsMap[person.id] = person.name;
-                });
-            }
-
-            const fragment = document.createDocumentFragment();
-            
-            spots.forEach(spot => {
-                const spotElement = document.createElement("div");
-                spotElement.className = `parking-spot ${spot.getStatusClass()}`;
-                
-                spotElement.innerHTML = `
-                    <h3>Place ${spot.spot_number}</h3>
-                    <p>Type: ${spot.getTypeLabel()}</p>
-                    <p>Statut: <span class="${spot.getStatusClass()}">${spot.status}</span></p>
-                    ${spot.owner_id && personsMap[spot.owner_id] ? 
-                        `<p>Propriétaire: ${personsMap[spot.owner_id]}</p>` : ''}
-                    <div class="spot-actions">
-                        <button class="btn-edit-spot" data-id="${spot.id}">Modifier</button>
-                        <button class="btn-delete-spot" data-id="${spot.id}">Supprimer</button>
-                    </div>
-                `;
-                
-                fragment.appendChild(spotElement);
-            });
-            
-            container.appendChild(fragment);
-            
-            console.log("Toutes les places ont été rendues, appel de setupParkingSpotEvents");
-            setTimeout(() => {
-                setupParkingSpotEvents();
-            }, 100);
-        })
-        .catch(error => {
-            console.error("Error fetching additional data:", error);
-            container.innerHTML += `<p class="error-message">Erreur de chargement des données: ${error.message}</p>`;
-        });
-}
-
-function renderSpots(spots, container) {
-    container.innerHTML = "";
     const currentUser = getCurrentUser();
     const isAdmin = currentUser && currentUser.role === 'admin';
-    const isOwner = currentUser && currentUser.role === 'owner';
-    const isRegularUser = currentUser && currentUser.role === 'user';
     
-    if (spots.length === 0) {
-        container.innerHTML = "<p>Aucune place de parking trouvée.</p>";
-        return;
-    }
+    const spotsGrid = document.createElement("div");
+    spotsGrid.className = "parking-grid";
     
-    fetchJSON("/app-gestion-parking/public/api/parking-spots/form-data")
-        .then(formData => {
-            const personsMap = {};
-            if (formData.persons) {
-                formData.persons.forEach(person => {
-                    personsMap[person.id] = person.name;
-                });
-            }
-
-            spots.forEach(spot => {
-                const div = document.createElement("div");
-                div.className = `parking-spot ${spot.getStatusClass()}`;
-                div.dataset.type = spot.type;
-                div.dataset.status = spot.status;
-                
-                let spotContent = `
-                    <h3>Place ${spot.spot_number}</h3>
-                    <p>Type: ${spot.getTypeLabel()}</p>
-                    <p>Statut: <span class="${spot.getStatusClass()}">${spot.status}</span></p>`;
-                
-                if (!isRegularUser) {
-                    spotContent += `
-                        ${spot.owner_id ? `<p>Propriétaire: ${personsMap[spot.owner_id] || 'Inconnu'}</p>` : ''}
-                        ${spot.pricing_id ? `<p>Tarification: ID ${spot.pricing_id}</p>` : ''}`;
-                }
-                
-                spotContent += `
-                    <div class="spot-actions">
-                        ${isAdmin ? 
-                            `<button class="btn-edit btn-edit-spot" data-id="${spot.id}">Modifier</button>
-                             <button class="btn-delete btn-delete-spot" data-id="${spot.id}">Supprimer</button>` : 
-                            spot.isAvailable() ? 
-                            `<button class="btn-primary btn-reserve-spot" data-id="${spot.id}">Réserver</button>` : 
-                            ''
-                        }
-                    </div>`;
-                
-                div.innerHTML = spotContent;
-                container.appendChild(div);
-            });
-            
-            attachSpotEvents();
-        })
-        .catch(error => {
-            console.error("Erreur lors du chargement des données des propriétaires:", error);
-            renderSpotsWithIdsOnly(spots, container);
-        });
+    spots.forEach(spot => {
+        const spotElement = document.createElement("div");
+        spotElement.className = `parking-spot ${spot.getStatusClass()}`;
+        
+        const ownerInfo = spot.owner_id ? 
+            `<p><strong>Propriétaire ID:</strong> ${spot.owner_id}</p>` : 
+            '';
+        
+        spotElement.innerHTML = `
+            <h3>Place ${spot.spot_number}</h3>
+            <p><strong>Type:</strong> ${spot.getTypeLabel()}</p>
+            <p><strong>Statut:</strong> <span class="${spot.getStatusClass()}">${spot.status}</span></p>
+            ${ownerInfo}
+            <div class="spot-actions">
+                ${spot.status === 'libre' ? 
+                    `<button class="btn-reserve-spot" data-id="${spot.id}">Réserver</button>` : ''}
+                ${isAdmin ? 
+                    `<button class="btn-edit-spot" data-id="${spot.id}">Modifier</button>
+                    <button class="btn-delete-spot" data-id="${spot.id}">Supprimer</button>` : ''}
+            </div>
+        `;
+        
+        spotsGrid.appendChild(spotElement);
+    });
+    
+    container.appendChild(spotsGrid);
+    attachSpotEvents();
 }
 
 function attachSpotEvents() {
-    const reserveButtons = document.querySelectorAll('.btn-reserve-spot');
-    reserveButtons.forEach(button => {
+    // Événements pour les boutons de réservation
+    document.querySelectorAll('.btn-reserve-spot').forEach(button => {
         button.addEventListener('click', () => {
             const spotId = button.getAttribute('data-id');
-            window.location.href = `/app-gestion-parking/public/reservation?spot=${spotId}`;
+            showReservationForm(spotId);
+        });
+    });
+    
+    // Événements pour les boutons d'édition (pour les admins)
+    document.querySelectorAll('.btn-edit-spot').forEach(button => {
+        button.addEventListener('click', () => {
+            const spotId = button.getAttribute('data-id');
+            editSpot(spotId);
+        });
+    });
+    
+    // Événements pour les boutons de suppression (pour les admins)
+    document.querySelectorAll('.btn-delete-spot').forEach(button => {
+        button.addEventListener('click', () => {
+            const spotId = button.getAttribute('data-id');
+            deleteSpot(spotId);
         });
     });
 }
 
-function setupFilterEvents(allSpots, container) {
+function setupFilterEvents(allSpots, container, filterSection) {
     const filterTypeSelect = document.getElementById('filter-type');
     const filterStatusSelect = document.getElementById('filter-status');
     const applyFilterBtn = document.getElementById('apply-filter');
     const resetFilterBtn = document.getElementById('reset-filter');
     
-    if (!filterTypeSelect || !filterStatusSelect || !applyFilterBtn || !resetFilterBtn) return;
+    if (!filterTypeSelect || !filterStatusSelect || !applyFilterBtn || !resetFilterBtn) {
+        console.error("Éléments de filtrage introuvables");
+        return;
+    }
     
     applyFilterBtn.addEventListener('click', () => {
         const typeFilter = filterTypeSelect.value;
@@ -199,13 +198,30 @@ function setupFilterEvents(allSpots, container) {
             return typeMatch && statusMatch;
         });
         
-        renderSpots(filteredSpots, container);
+        // Nettoyer le container et conserver le bouton de création et les filtres
+        const createBtn = document.getElementById('create-spot-btn');
+        container.innerHTML = "";
+        if (createBtn) container.appendChild(createBtn);
+        container.appendChild(document.createElement("br"));
+        container.appendChild(document.createElement("br"));
+        container.appendChild(filterSection);
+        
+        renderSpotsGrid(filteredSpots, container);
     });
     
     resetFilterBtn.addEventListener('click', () => {
-        filterTypeSelect.value = '';
-        filterStatusSelect.value = '';
-        renderSpots(allSpots, container);
+        filterTypeSelect.value = "";
+        filterStatusSelect.value = "";
+        
+        // Nettoyer le container et conserver le bouton de création et les filtres
+        const createBtn = document.getElementById('create-spot-btn');
+        container.innerHTML = "";
+        if (createBtn) container.appendChild(createBtn);
+        container.appendChild(document.createElement("br"));
+        container.appendChild(document.createElement("br"));
+        container.appendChild(filterSection);
+        
+        renderSpotsGrid(allSpots, container);
     });
 }
 
@@ -214,7 +230,7 @@ export function renderParkingSpotForm(spot = null, formData = null) {
     const currentUser = getCurrentUser();
     const isAdmin = currentUser && currentUser.role === 'admin';
     
-    if (!isAdmin) return "<p>Vous n'avez pas les droits pour effectuer cette action.</p>";
+    if (!isAdmin) return '';
     
     console.log("Données du formulaire:", formData);
     
@@ -286,7 +302,7 @@ export function renderDeleteConfirmation(spotId) {
     <div class="modal">
         <div class="modal-content">
             <h2>Confirmer la suppression</h2>
-            <p>Êtes-vous sûr de vouloir supprimer cette place de parking? Cette action est irréversible.</p>
+            <p>Êtes-vous sûr de vouloir supprimer cette place de parking ? Cette action est irréversible.</p>
             <div class="modal-actions">
                 <button id="confirm-delete" data-id="${spotId}" class="btn-danger">Supprimer</button>
                 <button id="cancel-delete" class="btn-secondary">Annuler</button>

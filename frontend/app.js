@@ -168,10 +168,11 @@ document.addEventListener("DOMContentLoaded", () => {
           if (content) {
             content.innerHTML = '<h1>Places de Parking</h1><div id="parking-spot-list"></div>';
             try {
-              await loadParkingSpots();
+              const module = await import('./controllers/parkingSpotController.js');
+              module.loadParkingSpots();
             } catch (error) {
-              console.error("Erreur lors du chargement des places de parking:", error);
-              content.innerHTML += `<p class="error-message">Une erreur est survenue lors du chargement des places de parking.</p>`;
+              console.error("Erreur lors du chargement du module des places de parking:", error);
+              content.innerHTML += `<p class="error-message">Erreur de chargement du module: ${error.message}</p>`;
             }
           }
         }
@@ -278,23 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
         initLoginForm();
       }
     },
-    {
-      path: '/app-gestion-parking/public/reservation',
-      controller: async () => {
-        if (checkProtectedRoute()) {
-          const content = document.getElementById('app-content');
-          if (content) {
-            content.innerHTML = '<h1>Mes Réservations</h1><div id="reservation-list"></div>';
-            try {
-              await loadReservations();
-            } catch (error) {
-              console.error("Erreur lors du chargement des réservations:", error);
-              content.innerHTML += `<p class="error-message">Une erreur est survenue lors du chargement des réservations.</p>`;
-            }
-          }
-        }
-      }
-    },
+    
     {
       path: '/app-gestion-parking/public/reservations',
       controller: async () => {
