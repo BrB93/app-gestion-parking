@@ -1,27 +1,29 @@
 import { fetchJSON } from "../core/fetchWrapper.js";
 import { getCurrentUser } from '../controllers/authController.js';
-import { setupParkingSpotEvents } from "../controllers/parkingSpotController.js";
-
+import { setupParkingSpotEvents, getParkingSpot, getFormData, deleteParkingSpot } from "../controllers/parkingSpotController.js";
 
 export function renderParkingSpots(spots) {
     const container = document.getElementById("parking-spot-list");
     if (!container) {
-        console.error("Conteneur 'parking-spot-list' introuvable");
+        console.error("Élément 'parking-spot-list' introuvable");
         return;
     }
     
     container.innerHTML = "";
     
-    // Ajout du bouton de création pour tous les utilisateurs
-    const createBtn = document.createElement("button");
-    createBtn.className = "btn-primary";
-    createBtn.id = "create-spot-btn";
-    createBtn.textContent = "Créer une nouvelle place";
-    container.appendChild(createBtn);
-    
-    // Ajout d'un espace après le bouton
-    container.appendChild(document.createElement("br"));
-    container.appendChild(document.createElement("br"));
+    // Vérifier si l'utilisateur est un administrateur avant d'afficher le bouton
+    const currentUser = getCurrentUser();
+    if (currentUser && currentUser.role === 'admin') {
+        const createBtn = document.createElement("button");
+        createBtn.className = "btn-primary";
+        createBtn.id = "create-spot-btn";
+        createBtn.textContent = "Créer une nouvelle place";
+        container.appendChild(createBtn);
+        
+        // Ajout d'un espace après le bouton
+        container.appendChild(document.createElement("br"));
+        container.appendChild(document.createElement("br"));
+    }
     
     // Section de filtrage
     const filterSection = document.createElement("div");
@@ -162,9 +164,9 @@ function attachSpotEvents() {
     
     // Événements pour les boutons d'édition (pour les admins)
     document.querySelectorAll('.btn-edit-spot').forEach(button => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', async () => {
             const spotId = button.getAttribute('data-id');
-            editSpot(spotId);
+            await editSpot(spotId);
         });
     });
     
@@ -174,6 +176,42 @@ function attachSpotEvents() {
             const spotId = button.getAttribute('data-id');
             deleteSpot(spotId);
         });
+    });
+}
+
+async function editSpot(spotId) {
+    try {
+        const formData = await getFormData();
+        const spot = await getParkingSpot(spotId);
+        
+        if (spot) {
+            const appContent = document.getElementById('app-content');
+            if (appContent) {
+                appContent.innerHTML = renderParkingSpotForm(spot, formData);
+                setupFormSubmission(spotId);
+            }
+        }
+    } catch (error) {
+        console.error(`Erreur lors de l'édition de la place ${spotId}:`, error);
+    }
+}
+
+function deleteSpot(spotId) {
+    const modalContainer = document.createElement('div');
+    modalContainer.id = 'modal-container';
+    modalContainer.innerHTML = renderDeleteConfirmation(spotId);
+    document.body.appendChild(modalContainer);
+    
+    document.getElementById('confirm-delete').addEventListener('click', async () => {
+        const result = await deleteParkingSpot(spotId);
+        if (result.success) {
+            document.body.removeChild(modalContainer);
+            window.location.reload();
+        }
+    });
+    
+    document.getElementById('cancel-delete').addEventListener('click', () => {
+        document.body.removeChild(modalContainer);
     });
 }
 
@@ -222,6 +260,74 @@ function setupFilterEvents(allSpots, container, filterSection) {
         container.appendChild(filterSection);
         
         renderSpotsGrid(allSpots, container);
+    });
+}
+
+function setupFormSubmission(id = null) {
+    const isEditing = id !== null;
+    const formId = isEditing ? 'edit-spot-form' : 'create-spot-form';
+    const form = document.getElementById(formId);
+    const errorElement = document.getElementById('form-error');
+    
+    if (!form) {
+        console.error(`Formulaire avec ID '${formId}' introuvable`);
+        return;
+    }
+
+    document.getElementById('cancel-form').addEventListener('click', () => {
+        window.location.href = '/app-gestion-parking/public/parking';
+    });
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const spotData = {};
+    
+        formData.forEach((value, key) => {
+            // Pour les champs de sélection vides (comme owner_id et pricing_id)
+            if (value === '') {
+                if (key === 'owner_id' || key === 'pricing_id') {
+                    spotData[key] = null;
+                } else {
+                    spotData[key] = value;
+                }
+            } else {
+                spotData[key] = value;
+            }
+        });
+
+        try {
+            const { validateFormData } = await import("../core/validator.js");
+            const { createParkingSpot, updateParkingSpot } = await import("../controllers/parkingSpotController.js");
+            
+            const validation = validateFormData(spotData);
+        
+            if (!validation.isValid) {
+                const errors = validation.errors;
+                let errorMessage = "Veuillez corriger les erreurs suivantes:\n";
+                for (const field in errors) {
+                    errorMessage += `- ${errors[field]}\n`;
+                }
+                errorElement.textContent = errorMessage;
+                return;
+            }
+        
+            let result;
+            if (isEditing) {
+                result = await updateParkingSpot(id, spotData);
+            } else {
+                result = await createParkingSpot(spotData);
+            }
+        
+            if (result.error) {
+                errorElement.textContent = result.error;
+            } else if (result.success) {
+                window.location.href = '/app-gestion-parking/public/parking';
+            }
+        } catch (error) {
+            console.error("Erreur lors de la soumission:", error);
+            errorElement.textContent = "Une erreur est survenue lors de la communication avec le serveur";
+        }
     });
 }
 
