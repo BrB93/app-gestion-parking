@@ -296,7 +296,24 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         }
       }
+    },
+    {
+      path: '/app-gestion-parking/public/payments',
+      controller: async () => {
+        if (checkProtectedRoute()) {
+          const content = document.getElementById('app-content');
+          if (content) {
+            import('./controllers/paymentController.js').then(module => {
+              module.loadPayments();
+            }).catch(err => {
+              console.error("Erreur lors du chargement du contrôleur de paiements:", err);
+              content.innerHTML = `<p class="error-message">Erreur de chargement: ${err.message}</p>`;
+            });
+          }
+        }
+      }
     }
+
   ];
   
   const router = new Router(routes);

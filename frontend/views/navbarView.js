@@ -15,6 +15,7 @@ export function renderNavbar() {
       <a href="/app-gestion-parking/public/vehicles" data-route="/app-gestion-parking/public/vehicles">Véhicules</a>
       <!-- Correction ici : reservation -> reservations -->
       ${user ? `<a href="/app-gestion-parking/public/reservations" data-route="/app-gestion-parking/public/reservations">Réservations</a>` : ''}
+      ${user ? `<a href="/app-gestion-parking/public/payments" data-route="/app-gestion-parking/public/payments">Paiements</a>` : ''}
       ${user ? `<a href="/app-gestion-parking/public/profile" data-route="/app-gestion-parking/public/profile">Mon Profil</a>` : ''}
     </div>
   `;

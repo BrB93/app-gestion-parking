@@ -7,6 +7,7 @@ use Controllers\AuthController;
 use Controllers\ParkingSpotController;
 use Controllers\PersonController;
 use Controllers\ReservationController;
+use Controllers\PaymentController;
 
 
 $uri = $_SERVER['REQUEST_URI'];
@@ -191,6 +192,42 @@ if ($uri === '/app-gestion-parking/public/reservations') {
 if (preg_match('#^/app-gestion-parking/public/api/reservations/(\d+)/update$#', $uri, $matches)) {
     $controller = new ReservationController();
     $controller->update($matches[1]); // Met à jour une réservation
+    exit;
+}
+
+// paiements
+if ($uri === '/app-gestion-parking/public/api/payments') {
+    $controller = new PaymentController();
+    $controller->index();
+    exit;
+}
+
+if (preg_match('#^/app-gestion-parking/public/api/payments/(\d+)$#', $uri, $matches)) {
+    $controller = new PaymentController();
+    $controller->show($matches[1]);
+    exit;
+}
+
+if ($uri === '/app-gestion-parking/public/api/payments/process') {
+    $controller = new PaymentController();
+    $controller->processPayment();
+    exit;
+}
+
+if (preg_match('#^/app-gestion-parking/public/api/payments/(\d+)/confirm$#', $uri, $matches)) {
+    $controller = new PaymentController();
+    $controller->confirmPayment($matches[1]);
+    exit;
+}
+
+if (preg_match('#^/app-gestion-parking/public/api/payments/(\d+)/cancel$#', $uri, $matches)) {
+    $controller = new PaymentController();
+    $controller->cancelPayment($matches[1]);
+    exit;
+}
+
+if ($uri === '/app-gestion-parking/public/payments') {
+    require_once __DIR__ . '/payments.php';
     exit;
 }
 
