@@ -303,21 +303,24 @@ document.addEventListener("DOMContentLoaded", () => {
         if (checkProtectedRoute()) {
           const content = document.getElementById('app-content');
           if (content) {
-            const urlParams = new URLSearchParams(window.location.search);
-            const reservationId = urlParams.get('reservation_id');
-            const amount = urlParams.get('amount');
+            content.innerHTML = `
+              <h1>Mes Paiements</h1>
+              <div id="payment-list">
+                <div class="loading">Chargement des paiements...</div>
+              </div>
+            `;
             
-            if (reservationId && amount) {
-              // Afficher le formulaire de paiement avec les données pré-remplies
-              import('./controllers/paymentController.js').then(module => {
-                module.showPaymentForm(reservationId, amount);
-              });
-            } else {
-              // Afficher la liste des paiements
-              import('./controllers/paymentController.js').then(module => {
-                module.loadPayments();
-              });
-            }
+            import('./controllers/paymentController.js').then(module => {
+              setTimeout(() => {
+                if (window.paymentData && window.paymentData.reservationId) {
+                  module.showPaymentForm(window.paymentData.reservationId, window.paymentData.amount);
+                } else {
+                  module.loadPayments().then(() => {
+                    setTimeout(() => module.refreshPaymentStatuses(), 500);
+                  });
+                }
+              }, 10);
+            });
           }
         }
       }

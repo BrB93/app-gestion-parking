@@ -104,9 +104,8 @@ class ReservationController {
             return;
         }
     
-        // Vérification des conflits de réservation
         if ($this->reservationRepo->hasConflictingReservations($data['spot_id'], $data['start_time'], $data['end_time'])) {
-            http_response_code(409); // Conflict
+            http_response_code(409);
             echo json_encode(['error' => 'Cette place est déjà réservée sur ce créneau horaire']);
             return;
         }

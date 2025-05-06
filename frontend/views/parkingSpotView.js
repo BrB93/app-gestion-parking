@@ -171,9 +171,37 @@ export function showReservationForm(spotId) {
                     } else if (result.success) {
                         document.body.removeChild(modalContainer);
                         const priceElement = document.getElementById('reservation-price');
-                        const price = priceElement ? priceElement.dataset.price : 0;
-                        window.location.href = `/app-gestion-parking/public/payments?reservation_id=${result.reservation_id}&amount=${price}`;
-                    }
+                        let price = priceElement ? priceElement.dataset.price : 0;
+                        
+                        if (!price || price == "0" || price == 0) {
+                          console.warn("Prix non défini ou à zéro, utilisation d'une valeur par défaut");
+                          price = 5.00;
+                        }
+                        
+                        console.log("Création du formulaire POST pour redirection vers paiement");
+                        console.log("ID de réservation:", result.reservation_id);
+                        console.log("Montant:", price);
+                        
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = '/app-gestion-parking/public/payments/process';
+                        form.style.display = 'none';
+                        
+                        const reservationField = document.createElement('input');
+                        reservationField.type = 'hidden';
+                        reservationField.name = 'reservation_id';
+                        reservationField.value = result.reservation_id;
+                        form.appendChild(reservationField);
+                        
+                        const amountField = document.createElement('input');
+                        amountField.type = 'hidden';
+                        amountField.name = 'amount';
+                        amountField.value = price;
+                        form.appendChild(amountField);
+                        
+                        document.body.appendChild(form);
+                        form.submit();
+                      }
                 });
                 
                 document.getElementById('cancel-reservation-form').addEventListener('click', () => {

@@ -20,21 +20,50 @@ class PaymentController {
         $currentUser = Auth::getCurrentUser();
         
         try {
+            $payments = [];
+            
             if ($currentUser->getRole() === 'admin') {
                 $payments = $this->paymentRepo->getAllPayments();
+            } else if ($currentUser->getRole() === 'owner') {
+                $userPayments = $this->paymentRepo->getPaymentsByUserId($currentUser->getId());
+                
+                $spotRepo = new \Repositories\ParkingSpotRepository();
+                $ownedSpots = $spotRepo->getSpotsByOwnerId($currentUser->getId());
+                $ownerPayments = [];
+                
+                foreach ($ownedSpots as $spot) {
+                    $reservationRepo = new \Repositories\ReservationRepository();
+                    $reservations = $reservationRepo->getReservationsBySpotId($spot->getId());
+                    
+                    foreach ($reservations as $reservation) {
+                        $resPayments = $this->paymentRepo->getPaymentsByReservationId($reservation->getId());
+                        foreach ($resPayments as $payment) {
+                            $payment->setIsOwnerSpot(true);
+                            $ownerPayments[] = $payment;
+                        }
+                    }
+                }
+                
+                $payments = array_merge($userPayments, $ownerPayments);
             } else {
                 $payments = $this->paymentRepo->getPaymentsByUserId($currentUser->getId());
             }
             
             header('Content-Type: application/json');
-            echo json_encode(array_map(function($payment) {
+            echo json_encode(array_map(function($payment) use ($currentUser) {
+                $reservation = $this->reservationRepo->getReservationById($payment->getReservationId());
+                $isOwnerSpot = isset($payment->is_owner_spot) && $payment->is_owner_spot;
+                
                 return [
                     'id' => $payment->getId(),
                     'reservation_id' => $payment->getReservationId(),
                     'amount' => $payment->getAmount(),
                     'method' => $payment->getMethod(),
                     'status' => $payment->getStatus(),
-                    'timestamp' => $payment->getTimestamp()
+                    'timestamp' => $payment->getTimestamp(),
+                    'is_owner_spot' => $isOwnerSpot ?? false,
+                    'user_id' => $reservation ? $reservation->getUserId() : null,
+                    'spot_id' => $reservation ? $reservation->getSpotId() : null
                 ];
             }, $payments));
         } catch (\Exception $e) {
@@ -43,9 +72,14 @@ class PaymentController {
             echo json_encode(['error' => 'Erreur lors du chargement des paiements: ' . $e->getMessage()]);
         }
     }
-
     public function show($id) {
         Auth::requireAuthentication();
+        
+        if (!is_numeric($id)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'ID de paiement invalide']);
+            return;
+        }
         
         $payment = $this->paymentRepo->getPaymentById($id);
         
@@ -76,9 +110,7 @@ class PaymentController {
             'reservation_id' => $payment->getReservationId(),
             'amount' => $payment->getAmount(),
             'method' => $payment->getMethod(),
-            'method_label' => $payment->getMethodLabel(),
             'status' => $payment->getStatus(),
-            'status_label' => $payment->getStatusLabel(),
             'timestamp' => $payment->getTimestamp()
         ]);
     }
@@ -97,7 +129,7 @@ class PaymentController {
         
         if (!isset($data['reservation_id']) || !isset($data['method']) || !isset($data['amount'])) {
             http_response_code(400);
-            echo json_encode(['error' => 'Données incomplètes']);
+            echo json_encode(['error' => 'Paramètres manquants']);
             return;
         }
         
@@ -122,7 +154,7 @@ class PaymentController {
         $currentUser = Auth::getCurrentUser();
         if ($currentUser->getRole() !== 'admin' && $reservation->getUserId() !== $currentUser->getId()) {
             http_response_code(403);
-            echo json_encode(['error' => 'Vous n\'êtes pas autorisé à payer cette réservation']);
+            echo json_encode(['error' => 'Accès non autorisé à cette réservation']);
             return;
         }
         
@@ -135,15 +167,18 @@ class PaymentController {
         }
         
         if ($paymentId > 0) {
-            http_response_code(201);
+            $this->paymentRepo->updatePaymentStatus($paymentId, 'effectue');
+            
+            $this->reservationRepo->updateStatus($reservationId, 'confirmee');
+            
             echo json_encode([
-                'success' => true,
-                'message' => 'Paiement initié avec succès',
-                'payment_id' => $paymentId
+                'success' => true, 
+                'payment_id' => $paymentId, 
+                'message' => 'Paiement effectué avec succès'
             ]);
         } else {
             http_response_code(500);
-            echo json_encode(['error' => 'Erreur lors de l\'initiation du paiement']);
+            echo json_encode(['error' => 'Erreur lors du traitement du paiement']);
         }
     }
     

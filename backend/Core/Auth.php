@@ -8,7 +8,8 @@ class Auth {
             session_start();
         }
         
-        return isset($_SESSION['user_id']);
+        return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']) && 
+               isset($_SESSION['user_role']) && !empty($_SESSION['user_role']);
     }
     
     public static function getCurrentUser() {

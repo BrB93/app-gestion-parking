@@ -88,6 +88,43 @@ class PaymentRepository {
         return $stmt->execute();
     }
 
+    public function getPaymentsBySpotId(int $spotId): array {
+        $stmt = $this->db->prepare("
+            SELECT p.* 
+            FROM payments p 
+            JOIN reservations r ON p.reservation_id = r.id 
+            WHERE r.spot_id = :spot_id 
+            ORDER BY p.timestamp DESC
+        ");
+        $stmt->bindParam(':spot_id', $spotId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $payments = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $payments[] = $this->mapToPayment($row);
+        }
+        return $payments;
+    }
+    
+    public function getTotalCompletedPaymentAmount(int $userId = null): float {
+        $query = "SELECT SUM(amount) as total FROM payments WHERE status = 'effectue'";
+        $params = [];
+        
+        if ($userId !== null) {
+            $query .= " AND reservation_id IN (SELECT id FROM reservations WHERE user_id = :user_id)";
+            $params[':user_id'] = $userId;
+        }
+        
+        $stmt = $this->db->prepare($query);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $stmt->execute();
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'] ?? 0;
+    }
+
     private function mapToPayment(array $row): Payment {
         return new Payment(
             $row['id'],

@@ -12,6 +12,13 @@ use Controllers\PricingController;
 
 
 $uri = $_SERVER['REQUEST_URI'];
+if (isset($_GET['reset_session'])) {
+    session_start();
+    session_destroy();
+    setcookie(session_name(), '', time() - 3600);
+    header('Location: /app-gestion-parking/public/login');
+    exit;
+}
 
 // utilisateurs
 if (preg_match('#^/app-gestion-parking/public/api/users$#', $uri)) {
@@ -224,8 +231,14 @@ if (preg_match('#^/app-gestion-parking/public/api/reservations/(\d+)/update$#', 
 
 // paiements
 if ($uri === '/app-gestion-parking/public/api/payments') {
-    $controller = new PaymentController();
-    $controller->index();
+    try {
+        $controller = new PaymentController();
+        $controller->index();
+    } catch (Exception $e) {
+        header('Content-Type: application/json');
+        http_response_code(500);
+        echo json_encode(['error' => 'Erreur serveur: ' . $e->getMessage()]);
+    }
     exit;
 }
 
@@ -253,10 +266,37 @@ if (preg_match('#^/app-gestion-parking/public/api/payments/(\d+)/cancel$#', $uri
     exit;
 }
 
-if ($uri === '/app-gestion-parking/public/payments') {
+if (preg_match('#^/app-gestion-parking/public/payments$#', $uri)) {
+    if (!Core\Auth::isAuthenticated()) {
+        $_SESSION['redirect_after_login'] = $uri;
+        header('Location: /app-gestion-parking/public/login');
+        exit;
+    }
     require_once __DIR__ . '/payments.php';
     exit;
 }
+
+if (preg_match('#^/app-gestion-parking/public/payments/process$#', $uri)) {
+    if (!Core\Auth::isAuthenticated()) {
+        $_SESSION['redirect_after_login'] = $uri;
+        header('Location: /app-gestion-parking/public/login');
+        exit;
+    }
+    
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $_SESSION['payment_data'] = [
+            'reservation_id' => $_POST['reservation_id'],
+            'amount' => $_POST['amount']
+        ];
+        
+        header('Location: /app-gestion-parking/public/payment-gateway.php');
+        exit;
+    } else {
+        header('Location: /app-gestion-parking/public/reservations');
+        exit;
+    }
+}
+
 
 // HTML
 if ($uri === '/app-gestion-parking/public/' || $uri === '/app-gestion-parking/public/index.php') {

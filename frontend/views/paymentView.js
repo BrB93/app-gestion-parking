@@ -46,23 +46,112 @@ export function renderPayments(payments) {
       const statusFilter = filterStatusSelect.value;
       
       const filteredPayments = payments.filter(payment => {
-        if (methodFilter && payment.method !== methodFilter) return false;
-        if (statusFilter && payment.status !== statusFilter) return false;
-        return true;
+        const methodMatch = !methodFilter || payment.method === methodFilter;
+        const statusMatch = !statusFilter || payment.status === statusFilter;
+        return methodMatch && statusMatch;
       });
       
       renderPaymentsList(filteredPayments, container);
     });
     
     resetFilterBtn.addEventListener('click', () => {
-      filterMethodSelect.value = '';
-      filterStatusSelect.value = '';
+      filterMethodSelect.value = "";
+      filterStatusSelect.value = "";
       renderPaymentsList(payments, container);
     });
   }
   
   renderPaymentsList(payments, container);
 }
+/**
+ * Génère le HTML pour un ensemble de paiements sans manipuler le DOM
+ * @param {Payment[]} payments - Liste de paiements à afficher
+ * @returns {string} - Chaîne HTML générée
+ */
+function generatePaymentsHTML(payments) {
+  if (payments.length === 0) return "<p>Aucun paiement trouvé.</p>";
+  
+  let html = '';
+  payments.forEach(payment => {
+    html += `
+      <div class="payment-card ${payment.getStatusClass()}" data-id="${payment.id}" data-user-id="${payment.user_id}">
+        <h3>Paiement #${payment.id}</h3>
+        <p>Réservation: #${payment.reservation_id}</p>
+        <p>Montant: ${payment.getFormattedAmount()}</p>
+        <p>Méthode: ${payment.getMethodLabel()}</p>
+        <p>Statut: <span class="payment-status ${payment.getStatusClass()}">${payment.getStatusLabel()}</span></p>
+        <p>Date: ${payment.getFormattedDate()}</p>
+        ${payment.is_owner_spot ? `<p>Place ID: ${payment.spot_id}</p>` : ''}
+        <div class="payment-actions">
+          ${renderPaymentActions(payment)}
+        </div>
+      </div>
+    `;
+  });
+  
+  return html;
+}
+
+export function renderOwnerPayments(userPayments, ownerSpotPayments, totalAmount) {
+  const container = document.getElementById("payment-list");
+  if (!container) return;
+  
+  container.innerHTML = "";
+
+  if (userPayments.length > 0) {
+    const personalSection = document.createElement("div");
+    personalSection.className = "payment-section";
+    personalSection.innerHTML = `
+      <h2>Mes paiements personnels</h2>
+      <div class="payments-container">
+        ${generatePaymentsHTML(userPayments)}
+      </div>
+    `;
+    container.appendChild(personalSection);
+  }
+
+  const ownerSection = document.createElement("div");
+  ownerSection.className = "payment-section";
+  
+  const completedPayments = ownerSpotPayments.filter(p => p.isCompleted());
+  const pendingPayments = ownerSpotPayments.filter(p => p.isPending());
+  
+  ownerSection.innerHTML = `
+    <h2>Paiements liés à mes places de parking</h2>
+    <div class="owner-summary">
+      <p class="total-amount">Total des revenus: <span>${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(totalAmount)}</span></p>
+    </div>
+  `;
+
+  if (completedPayments.length > 0) {
+    const completedSection = document.createElement("div");
+    completedSection.innerHTML = `
+      <h3>Paiements effectués</h3>
+      <div class="payments-container">
+        ${generatePaymentsHTML(completedPayments)}
+      </div>
+    `;
+    ownerSection.appendChild(completedSection);
+  }
+  
+  if (pendingPayments.length > 0) {
+    const pendingSection = document.createElement("div");
+    pendingSection.innerHTML = `
+      <h3>Paiements en attente</h3>
+      <div class="payments-container">
+        ${generatePaymentsHTML(pendingPayments)}
+      </div>
+    `;
+    ownerSection.appendChild(pendingSection);
+  }
+  
+  if (ownerSpotPayments.length === 0) {
+    ownerSection.innerHTML += `<p>Aucun paiement lié à vos places de parking n'a été trouvé.</p>`;
+  }
+  
+  container.appendChild(ownerSection);
+}
+
 
 function renderPaymentsList(payments, container) {
   const paymentListContainer = document.createElement("div");
@@ -71,13 +160,15 @@ function renderPaymentsList(payments, container) {
   payments.forEach(payment => {
     const div = document.createElement("div");
     div.className = `payment-card ${payment.getStatusClass()}`;
+    div.dataset.id = payment.id;
+    div.dataset.userId = payment.user_id;
     
     div.innerHTML = `
       <h3>Paiement #${payment.id}</h3>
       <p>Réservation: #${payment.reservation_id}</p>
       <p>Montant: ${payment.getFormattedAmount()}</p>
       <p>Méthode: ${payment.getMethodLabel()}</p>
-      <p>Statut: <span class="${payment.getStatusClass()}">${payment.getStatusLabel()}</span></p>
+      <p>Statut: <span class="payment-status ${payment.getStatusClass()}">${payment.getStatusLabel()}</span></p>
       <p>Date: ${payment.getFormattedDate()}</p>
       <div class="payment-actions">
         ${renderPaymentActions(payment)}
@@ -94,6 +185,7 @@ function renderPaymentsList(payments, container) {
     container.appendChild(paymentListContainer);
   }
 }
+
 
 function renderPaymentActions(payment) {
   const currentUser = getCurrentUser();

@@ -36,3 +36,21 @@ export class Router {
       this.handleRouteChange();
     }
   }
+
+  function handleRouteChange() {
+    const currentPath = window.location.pathname + window.location.search;
+    const route = routes.find(r => currentPath.match(new RegExp(r.path)));
+    
+    if (route) {
+      const contentElement = document.getElementById('app-content');
+      if (contentElement) {
+        contentElement.innerHTML = '<div class="loading">Chargement de la page...</div>';
+      }
+      
+      setTimeout(() => {
+        route.controller();
+      }, 10);
+    } else {
+      console.warn(`Aucune route trouvée pour ${currentPath}`);
+    }
+  }

@@ -2,6 +2,8 @@
 namespace Models;
 
 class Payment {
+    public bool $is_owner_spot = false;
+    
     public function __construct(
         private int $id,
         private int $reservation_id,
@@ -17,6 +19,8 @@ class Payment {
     public function getMethod(): string { return $this->method; }
     public function getStatus(): string { return $this->status; }
     public function getTimestamp(): ?string { return $this->timestamp; }
+    public function isOwnerSpot(): bool { return $this->is_owner_spot; }
+    public function setIsOwnerSpot(bool $value): void { $this->is_owner_spot = $value; }
 
     public function isPending(): bool { return $this->status === 'en_attente'; }
     public function isCompleted(): bool { return $this->status === 'effectue'; }

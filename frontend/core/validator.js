@@ -50,7 +50,6 @@ export function validateFormData(data) {
     const errors = {};
     let isValid = true;
     
-    // Validation du nom d'utilisateur
     if (data.username !== undefined) {
         if (data.username.trim() === '') {
             errors.username = "Le nom d'utilisateur est requis";
@@ -61,7 +60,6 @@ export function validateFormData(data) {
         }
     }
     
-    // Validation de l'email
     if (data.email !== undefined) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (data.email.trim() === '') {
@@ -73,7 +71,6 @@ export function validateFormData(data) {
         }
     }
     
-    // Validation du mot de passe pour création d'utilisateur
     if (data.password !== undefined && data.id === undefined) {
         if (data.password.trim() === '') {
             errors.password = "Le mot de passe est requis";
@@ -84,7 +81,6 @@ export function validateFormData(data) {
         }
     }
     
-    // Validation des informations personnelles
     if (data.first_name !== undefined && data.first_name.trim() === '') {
         errors.first_name = "Le prénom est requis";
         isValid = false;
@@ -110,7 +106,6 @@ export function validateFormData(data) {
         isValid = false;
     }
     
-    // Validation numéro de téléphone optionnel
     if (data.phone && !/^[0-9+\s()-]{6,20}$/.test(data.phone)) {
         errors.phone = "Format de numéro de téléphone invalide";
         isValid = false;

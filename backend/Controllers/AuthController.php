@@ -62,8 +62,11 @@ class AuthController {
         $_SESSION['user_role'] = $user->getRole();
         $_SESSION['user_phone'] = $user->getPhone();
         
+        $_SESSION['just_logged_in'] = true;
+    
         echo json_encode([
             'success' => true,
+            'redirect_to' => $_SESSION['redirect_after_login'] ?? '/app-gestion-parking/public/',
             'user' => [
                 'id' => $user->getId(),
                 'name' => $user->getName(),

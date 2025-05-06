@@ -1,11 +1,14 @@
 export class Payment {
-    constructor(id, reservation_id, amount, method, status = 'en_attente', timestamp = null) {
+    constructor(id, reservation_id, amount, method, status = 'en_attente', timestamp = null, user_id = null, spot_id = null, is_owner_spot = false) {
       this.id = id;
       this.reservation_id = reservation_id;
       this.amount = amount;
       this.method = method;
       this.status = status;
       this.timestamp = timestamp ? new Date(timestamp) : new Date();
+      this.user_id = user_id;
+      this.spot_id = spot_id;
+      this.is_owner_spot = is_owner_spot;
     }
   
     isPending() {
