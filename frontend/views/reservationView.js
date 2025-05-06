@@ -147,8 +147,12 @@ export function renderReservationForm({ spotId = null, userId = null, defaultSta
           <label for="end_time">Date de fin:</label>
           <input type="datetime-local" name="end_time" id="end_time" value="${defaultEnd}" required>
         </div>
+        <div class="form-group pricing-info">
+          <h3>Tarification</h3>
+          <p>Prix estimé: <span id="reservation-price">Calcul en cours...</span></p>
+        </div>
         <div class="form-group">
-          <button type="submit" class="btn-primary">Réserver</button>
+          <button type="submit" class="btn-primary">Réserver et payer</button>
           <button type="button" id="cancel-reservation-form" class="btn-secondary">Annuler</button>
         </div>
         <div id="form-error" class="error-message"></div>
@@ -156,7 +160,6 @@ export function renderReservationForm({ spotId = null, userId = null, defaultSta
     </div>
   `;
 }
-
 export function renderDeleteConfirmation(reservationId) {
     return `
       <div class="modal">

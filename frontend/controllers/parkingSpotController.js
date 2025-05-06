@@ -145,7 +145,6 @@ export function setupFormSubmission(id = null) {
         const spotData = {};
     
         formData.forEach((value, key) => {
-            // Pour les champs de sélection vides (comme owner_id et pricing_id)
             if (value === '') {
                 if (key === 'owner_id' || key === 'pricing_id') {
                     spotData[key] = null;
@@ -185,6 +184,53 @@ export function setupFormSubmission(id = null) {
         } catch (error) {
             console.error("Erreur lors de la soumission:", error);
             errorElement.textContent = "Une erreur est survenue lors de la communication avec le serveur";
+        }
+    });
+}
+
+export async function getSpotAvailability(spotId) {
+    try {
+        const data = await fetchJSON(`/app-gestion-parking/public/api/parking-spots/${spotId}/availability`);
+        return data;
+    } catch (error) {
+        console.error(`Erreur lors de la récupération des disponibilités pour la place ${spotId}:`, error);
+        return { available: false, reservations: [] };
+    }
+}
+
+export function showAvailabilityInfo(spotId) {
+    const modalContainer = document.createElement('div');
+    modalContainer.className = 'modal-container';
+    modalContainer.id = 'availability-modal';
+    
+    modalContainer.innerHTML = `
+        <div class="modal-content">
+            <h2>Disponibilités de la place</h2>
+            <div id="availability-content">
+                <p>Chargement des disponibilités...</p>
+            </div>
+            <button id="close-availability" class="btn-secondary">Fermer</button>
+        </div>
+    `;
+    
+    document.body.appendChild(modalContainer);
+    
+    document.getElementById('close-availability').addEventListener('click', () => {
+        document.body.removeChild(modalContainer);
+    });
+    
+    getSpotAvailability(spotId).then(data => {
+        const content = document.getElementById('availability-content');
+        if (data.reservations && data.reservations.length > 0) {
+            content.innerHTML = `
+                <p>Cette place est réservée pour les créneaux suivants:</p>
+                <ul>
+                    ${data.reservations.map(res => `<li>${new Date(res.start_time).toLocaleString()} - ${new Date(res.end_time).toLocaleString()}</li>`).join('')}
+                </ul>
+                <p>Vous pouvez réserver cette place en dehors de ces créneaux.</p>
+            `;
+        } else {
+            content.innerHTML = `<p>Cette place est entièrement disponible.</p>`;
         }
     });
 }

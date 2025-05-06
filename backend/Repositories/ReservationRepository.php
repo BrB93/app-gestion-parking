@@ -67,17 +67,20 @@ class ReservationRepository {
         return $reservations;
     }
 
-    public function createReservation(int $userId, int $spotId, string $startTime, string $endTime, string $status = 'en_attente'): bool {
+    public function createReservation(int $userId, int $spotId, string $startTime, string $endTime, string $status = 'en_attente'): int {
         $stmt = $this->db->prepare("INSERT INTO reservations (user_id, spot_id, start_time, end_time, status) VALUES (:user_id, :spot_id, :start_time, :end_time, :status)");
         $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
         $stmt->bindParam(':spot_id', $spotId, PDO::PARAM_INT);
         $stmt->bindParam(':start_time', $startTime, PDO::PARAM_STR);
         $stmt->bindParam(':end_time', $endTime, PDO::PARAM_STR);
         $stmt->bindParam(':status', $status, PDO::PARAM_STR);
-
-        return $stmt->execute();
+    
+        if ($stmt->execute()) {
+            return (int)$this->db->lastInsertId();
+        }
+        
+        return 0;
     }
-
     public function updateReservation(int $id, array $data): bool {
         $setClauses = [];
         $params = [':id' => $id];
@@ -178,4 +181,33 @@ class ReservationRepository {
         }
         return $reservations;
     }
+
+    public function hasConflictingReservations(int $spotId, string $startTime, string $endTime, ?int $excludeReservationId = null): bool
+{
+    $query = "SELECT COUNT(*) FROM reservations 
+              WHERE spot_id = :spot_id 
+              AND status NOT IN ('annulee')
+              AND (
+                  (start_time < :end_time AND end_time > :start_time)
+              )";
+    
+    $params = [
+        ':spot_id' => $spotId,
+        ':start_time' => $startTime,
+        ':end_time' => $endTime
+    ];
+    
+    if ($excludeReservationId !== null) {
+        $query .= " AND id != :exclude_id";
+        $params[':exclude_id'] = $excludeReservationId;
+    }
+    
+    $stmt = $this->db->prepare($query);
+    foreach ($params as $key => $value) {
+        $stmt->bindValue($key, $value);
+    }
+    
+    $stmt->execute();
+    return (int)$stmt->fetchColumn() > 0;
+}
 }

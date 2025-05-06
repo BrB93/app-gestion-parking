@@ -79,49 +79,57 @@ class ReservationController {
 
     public function create() {
         Auth::requireAuthentication();
-
+    
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['error' => 'Méthode non autorisée']);
             return;
         }
-
+    
         $data = json_decode(file_get_contents('php://input'), true);
         $data = Validator::sanitizeData($data);
-
+    
         if (!isset($data['spot_id']) || !isset($data['start_time']) || !isset($data['end_time'])) {
             http_response_code(400);
             echo json_encode(['error' => 'Données manquantes']);
             return;
         }
-
+    
         $currentUser = Auth::getCurrentUser();
-
+    
         $spot = $this->spotRepo->getSpotById($data['spot_id']);
         if (!$spot || $spot->getStatus() === 'occupee') {
             http_response_code(400);
             echo json_encode(['error' => 'Place non disponible']);
             return;
         }
-
-        $result = $this->reservationRepo->createReservation(
+    
+        // Vérification des conflits de réservation
+        if ($this->reservationRepo->hasConflictingReservations($data['spot_id'], $data['start_time'], $data['end_time'])) {
+            http_response_code(409); // Conflict
+            echo json_encode(['error' => 'Cette place est déjà réservée sur ce créneau horaire']);
+            return;
+        }
+    
+        $reservationId = $this->reservationRepo->createReservation(
             $currentUser->getId(),
             $data['spot_id'],
             $data['start_time'],
             $data['end_time']
         );
-
-        if ($result) {
+    
+        if ($reservationId) {
             $this->spotRepo->updateSpotStatus($data['spot_id'], 'reservee');
-
-            http_response_code(201);
-            echo json_encode(['success' => true, 'message' => 'Réservation créée']);
+            echo json_encode([
+                'success' => true, 
+                'message' => 'Réservation créée',
+                'reservation_id' => $reservationId
+            ]);
         } else {
             http_response_code(500);
             echo json_encode(['error' => 'Erreur lors de la création de la réservation']);
         }
     }
-
     public function cancel($id) {
         Auth::requireAuthentication();
         $currentUser = Auth::getCurrentUser();
@@ -224,6 +232,17 @@ class ReservationController {
             'start_time' => $data['start_time'],
             'end_time' => $data['end_time']
         ];
+
+        if ($this->reservationRepo->hasConflictingReservations(
+            $reservation->getSpotId(),
+            $data['start_time'],
+            $data['end_time'],
+            $id
+        )) {
+            http_response_code(409);
+            echo json_encode(['error' => 'Cette place est déjà réservée sur ce créneau horaire']);
+            return;
+        }
         
         $result = $this->reservationRepo->updateReservation($id, $updateData);
         
@@ -233,5 +252,40 @@ class ReservationController {
             http_response_code(500);
             echo json_encode(['error' => 'Erreur lors de la mise à jour de la réservation']);
         }
+    }
+
+    public function getAvailability($id) {
+        Auth::requireAuthentication();
+        
+        $spot = $this->spotRepo->getSpotById($id);
+        
+        if (!$spot) {
+            header('Content-Type: application/json');
+            http_response_code(404);
+            echo json_encode(['error' => 'Place de parking non trouvée']);
+            return;
+        }
+        
+        $reservationRepo = new \Repositories\ReservationRepository();
+        $reservations = $reservationRepo->getReservationsBySpotId($id);
+        
+        $activeReservations = array_filter($reservations, function($res) {
+            return $res->getStatus() !== 'annulee' && 
+                   strtotime($res->getEndTime()) > time();
+        });
+        
+        header('Content-Type: application/json');
+        echo json_encode([
+            'spot_id' => $id,
+            'available' => true,
+            'reservations' => array_map(function($res) {
+                return [
+                    'id' => $res->getId(),
+                    'start_time' => $res->getStartTime(),
+                    'end_time' => $res->getEndTime(),
+                    'status' => $res->getStatus()
+                ];
+            }, $activeReservations)
+        ]);
     }
 }

@@ -11,7 +11,6 @@ export function renderParkingSpots(spots) {
     
     container.innerHTML = "";
     
-    // Vérifier si l'utilisateur est un administrateur avant d'afficher le bouton
     const currentUser = getCurrentUser();
     if (currentUser && currentUser.role === 'admin') {
         const createBtn = document.createElement("button");
@@ -20,12 +19,10 @@ export function renderParkingSpots(spots) {
         createBtn.textContent = "Créer une nouvelle place";
         container.appendChild(createBtn);
         
-        // Ajout d'un espace après le bouton
         container.appendChild(document.createElement("br"));
         container.appendChild(document.createElement("br"));
     }
     
-    // Section de filtrage
     const filterSection = document.createElement("div");
     filterSection.className = "filter-section";
     filterSection.innerHTML = `
@@ -51,13 +48,10 @@ export function renderParkingSpots(spots) {
     
     container.appendChild(filterSection);
     
-    // Gestion de la référence filterSection pour setupFilterEvents
     const filterSectionRef = filterSection;
     
-    // Configuration des événements de filtrage
     setupFilterEvents(spots, container, filterSectionRef);
     
-    // Rendu des places
     renderSpotsGrid(spots, container);
 }
 
@@ -68,55 +62,118 @@ export function showReservationForm(spotId) {
     
     const currentUser = getCurrentUser();
     if (!currentUser) {
-        alert("Vous devez être connecté pour effectuer une réservation");
+        window.location.href = '/app-gestion-parking/public/login';
         return;
     }
     
     Promise.all([
         import('../controllers/reservationController.js'),
-        import('../views/reservationView.js')
-    ]).then(([controllerModule, viewModule]) => {
-        // Utiliser renderReservationForm depuis le module de vue
-        modalContainer.innerHTML = viewModule.renderReservationForm({ spotId: spotId });
-        document.body.appendChild(modalContainer);
-        
-        const form = document.getElementById('reservation-form');
-        const cancelBtn = document.getElementById('cancel-reservation-form');
-        
-        // Configurer les événements du formulaire
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(form);
-            const reservationData = {};
-            
-            formData.forEach((value, key) => {
-                reservationData[key] = value;
+        import('../views/reservationView.js'),
+        import('../controllers/pricingController.js')
+    ]).then(([controllerModule, viewModule, pricingModule]) => {
+        import('../controllers/parkingSpotController.js').then(spotController => {
+            spotController.getParkingSpot(spotId).then(spot => {
+                if (!spot) {
+                    console.error(`La place ${spotId} n'existe pas`);
+                    return;
+                }
+                
+                const now = new Date();
+                const tomorrow = new Date();
+                tomorrow.setDate(now.getDate() + 1);
+                
+                const defaultStart = now.toISOString().slice(0, 16);
+                const defaultEnd = tomorrow.toISOString().slice(0, 16);
+                
+                modalContainer.innerHTML = viewModule.renderReservationForm({
+                    spotId: spotId,
+                    userId: currentUser.id,
+                    defaultStart: defaultStart,
+                    defaultEnd: defaultEnd
+                });
+                
+                document.body.appendChild(modalContainer);
+                
+                const form = document.getElementById('reservation-form');
+                const startTimeInput = document.getElementById('start_time');
+                const endTimeInput = document.getElementById('end_time');
+                const errorElement = document.getElementById('form-error');
+                
+                const updatePrice = async () => {
+                    const startTime = startTimeInput.value;
+                    const endTime = endTimeInput.value;
+                    
+                    if (!startTime || !endTime) return;
+                    
+                    try {
+                        const result = await pricingModule.calculatePrice(spotId, startTime, endTime);
+                        
+                        if (result.error) {
+                            console.error("Erreur de calcul de prix:", result.error);
+                            return;
+                        }
+                        
+                        const priceElement = document.getElementById('reservation-price');
+                        if (priceElement) {
+                            priceElement.textContent = result.formatted_price;
+                            priceElement.dataset.price = result.price;
+                        }
+                    } catch (error) {
+                        console.error("Erreur lors du calcul du prix:", error);
+                    }
+                };
+                
+                updatePrice();
+                
+                startTimeInput.addEventListener('change', updatePrice);
+                endTimeInput.addEventListener('change', updatePrice);
+                
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(form);
+                    const reservationData = {};
+                    
+                    formData.forEach((value, key) => {
+                        reservationData[key] = value;
+                    });
+                    
+                    const validation = controllerModule.validateReservationData 
+                        ? controllerModule.validateReservationData(reservationData) 
+                        : { isValid: true };
+                    
+                    if (!validation.isValid) {
+                        errorElement.textContent = Object.values(validation.errors).join('\n');
+                        return;
+                    }
+                    
+                    const result = await controllerModule.createReservation(reservationData);
+                    
+                    if (result.error) {
+                        errorElement.textContent = result.error;
+                    } else if (result.success) {
+                        document.body.removeChild(modalContainer);
+                        const priceElement = document.getElementById('reservation-price');
+                        const price = priceElement ? priceElement.dataset.price : 0;
+                        window.location.href = `/app-gestion-parking/public/payments?reservation_id=${result.reservation_id}&amount=${price}`;
+                    }
+                });
+                
+                document.getElementById('cancel-reservation-form').addEventListener('click', () => {
+                    document.body.removeChild(modalContainer);
+                });
             });
-            
-            reservationData.user_id = currentUser.id;
-            
-            // Utiliser le contrôleur pour créer la réservation
-            const result = await controllerModule.createReservation(reservationData);
-            
-            if (result.error) {
-                document.getElementById('form-error').textContent = result.error;
-            } else if (result.success) {
-                document.body.removeChild(modalContainer);
-                window.location.reload();
-            }
-        });
-        
-        cancelBtn.addEventListener('click', () => {
-            document.body.removeChild(modalContainer);
         });
     }).catch(err => {
-        console.error('Erreur lors du chargement du module de réservation:', err);
+        console.error("Erreur lors du chargement des modules:", err);
+        modalContainer.innerHTML = '<div class="modal-content"><p>Une erreur est survenue.</p></div>';
+        document.body.appendChild(modalContainer);
     });
 }
 
 function renderSpotsGrid(spots, container) {
     if (spots.length === 0) {
-        container.innerHTML += "<p>Aucune place de parking trouvée.</p>";
+        container.innerHTML = "<p>Aucune place de parking trouvée.</p>";
         return;
     }
     
@@ -127,28 +184,29 @@ function renderSpotsGrid(spots, container) {
     spotsGrid.className = "parking-grid";
     
     spots.forEach(spot => {
-        const spotElement = document.createElement("div");
-        spotElement.className = `parking-spot ${spot.getStatusClass()}`;
+        const div = document.createElement("div");
+        div.className = `parking-spot ${spot.getStatusClass()}`;
         
-        const ownerInfo = spot.owner_id ? 
-            `<p><strong>Propriétaire ID:</strong> ${spot.owner_id}</p>` : 
-            '';
+        let canBeReserved = spot.isAvailable();
         
-        spotElement.innerHTML = `
+
+        if (spot.status === 'reservee') {
+            canBeReserved = true;
+        }
+        
+        div.innerHTML = `
             <h3>Place ${spot.spot_number}</h3>
-            <p><strong>Type:</strong> ${spot.getTypeLabel()}</p>
-            <p><strong>Statut:</strong> <span class="${spot.getStatusClass()}">${spot.status}</span></p>
-            ${ownerInfo}
+            <p>Type: ${spot.getTypeLabel()}</p>
+            <p>Statut: <span class="${spot.getStatusClass()}">${spot.status}</span></p>
+            ${spot.owner_id ? `<p>Propriétaire ID: ${spot.owner_id}</p>` : ''}
             <div class="spot-actions">
-                ${spot.status === 'libre' ? 
-                    `<button class="btn-reserve-spot" data-id="${spot.id}">Réserver</button>` : ''}
-                ${isAdmin ? 
-                    `<button class="btn-edit-spot" data-id="${spot.id}">Modifier</button>
-                    <button class="btn-delete-spot" data-id="${spot.id}">Supprimer</button>` : ''}
+                ${canBeReserved && !isAdmin ? `<button class="btn-reserve-spot" data-id="${spot.id}">Réserver</button>` : ''}
+                ${isAdmin ? `<button class="btn-edit-spot" data-id="${spot.id}">Modifier</button>` : ''}
+                ${isAdmin ? `<button class="btn-delete-spot" data-id="${spot.id}">Supprimer</button>` : ''}
             </div>
         `;
         
-        spotsGrid.appendChild(spotElement);
+        spotsGrid.appendChild(div);
     });
     
     container.appendChild(spotsGrid);
@@ -156,7 +214,6 @@ function renderSpotsGrid(spots, container) {
 }
 
 function attachSpotEvents() {
-    // Événements pour les boutons de réservation
     document.querySelectorAll('.btn-reserve-spot').forEach(button => {
         button.addEventListener('click', () => {
             const spotId = button.getAttribute('data-id');
@@ -164,7 +221,6 @@ function attachSpotEvents() {
         });
     });
     
-    // Événements pour les boutons d'édition (pour les admins)
     document.querySelectorAll('.btn-edit-spot').forEach(button => {
         button.addEventListener('click', async () => {
             const spotId = button.getAttribute('data-id');
@@ -172,7 +228,6 @@ function attachSpotEvents() {
         });
     });
     
-    // Événements pour les boutons de suppression (pour les admins)
     document.querySelectorAll('.btn-delete-spot').forEach(button => {
         button.addEventListener('click', () => {
             const spotId = button.getAttribute('data-id');
@@ -238,7 +293,6 @@ function setupFilterEvents(allSpots, container, filterSection) {
             return typeMatch && statusMatch;
         });
         
-        // Nettoyer le container et conserver le bouton de création et les filtres
         const createBtn = document.getElementById('create-spot-btn');
         container.innerHTML = "";
         if (createBtn) container.appendChild(createBtn);
@@ -253,7 +307,6 @@ function setupFilterEvents(allSpots, container, filterSection) {
         filterTypeSelect.value = "";
         filterStatusSelect.value = "";
         
-        // Nettoyer le container et conserver le bouton de création et les filtres
         const createBtn = document.getElementById('create-spot-btn');
         container.innerHTML = "";
         if (createBtn) container.appendChild(createBtn);
@@ -286,7 +339,6 @@ function setupFormSubmission(id = null) {
         const spotData = {};
     
         formData.forEach((value, key) => {
-            // Pour les champs de sélection vides (comme owner_id et pricing_id)
             if (value === '') {
                 if (key === 'owner_id' || key === 'pricing_id') {
                     spotData[key] = null;

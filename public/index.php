@@ -8,6 +8,7 @@ use Controllers\ParkingSpotController;
 use Controllers\PersonController;
 use Controllers\ReservationController;
 use Controllers\PaymentController;
+use Controllers\PricingController;
 
 
 $uri = $_SERVER['REQUEST_URI'];
@@ -111,6 +112,12 @@ if (preg_match('#^/app-gestion-parking/public/api/parking-spots/(\d+)$#', $uri, 
     exit;
 }
 
+if (preg_match('#^/app-gestion-parking/public/api/parking-spots/(\d+)/availability$#', $uri, $matches)) {
+    $controller = new ParkingSpotController();
+    $controller->getAvailability($matches[1]);
+    exit;
+}
+
 // personnes
 if (preg_match('#^/app-gestion-parking/public/api/persons/(\d+)$#', $uri, $matches)) {
     $controller = new PersonController();
@@ -159,28 +166,48 @@ if ($uri === '/app-gestion-parking/public/persons') {
     exit;
 }
 
+//Tarifs
+
+if ($uri === '/app-gestion-parking/public/api/pricings') {
+    $controller = new PricingController();
+    $controller->index();
+    exit;
+}
+
+if ($uri === '/app-gestion-parking/public/api/pricings/calculate') {
+    $controller = new PricingController();
+    $controller->calculatePrice();
+    exit;
+}
+
+if (preg_match('#^/app-gestion-parking/public/api/pricings/by-type/(.+)$#', $uri, $matches)) {
+    $controller = new PricingController();
+    $controller->getBySpotType($matches[1]);
+    exit;
+}
+
 // réservations
 if (preg_match('#^/app-gestion-parking/public/api/reservations$#', $uri)) {
     $controller = new ReservationController();
-    $controller->index(); // Liste toutes les réservations
+    $controller->index();
     exit;
 }
 
 if ($uri === '/app-gestion-parking/public/api/reservations/create') {
     $controller = new ReservationController();
-    $controller->create(); // Crée une réservation
+    $controller->create();
     exit;
 }
 
 if (preg_match('#^/app-gestion-parking/public/api/reservations/(\d+)$#', $uri, $matches)) {
     $controller = new ReservationController();
-    $controller->show($matches[1]); // Détail d'une réservation
+    $controller->show($matches[1]);
     exit;
 }
 
 if (preg_match('#^/app-gestion-parking/public/api/reservations/(\d+)/cancel$#', $uri, $matches)) {
     $controller = new ReservationController();
-    $controller->cancel($matches[1]); // Annule une réservation
+    $controller->cancel($matches[1]);
     exit;
 }
 
@@ -191,7 +218,7 @@ if ($uri === '/app-gestion-parking/public/reservations') {
 
 if (preg_match('#^/app-gestion-parking/public/api/reservations/(\d+)/update$#', $uri, $matches)) {
     $controller = new ReservationController();
-    $controller->update($matches[1]); // Met à jour une réservation
+    $controller->update($matches[1]);
     exit;
 }
 
