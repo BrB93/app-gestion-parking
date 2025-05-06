@@ -303,12 +303,21 @@ document.addEventListener("DOMContentLoaded", () => {
         if (checkProtectedRoute()) {
           const content = document.getElementById('app-content');
           if (content) {
-            import('./controllers/paymentController.js').then(module => {
-              module.loadPayments();
-            }).catch(err => {
-              console.error("Erreur lors du chargement du contrôleur de paiements:", err);
-              content.innerHTML = `<p class="error-message">Erreur de chargement: ${err.message}</p>`;
-            });
+            const urlParams = new URLSearchParams(window.location.search);
+            const reservationId = urlParams.get('reservation_id');
+            const amount = urlParams.get('amount');
+            
+            if (reservationId && amount) {
+              // Afficher le formulaire de paiement avec les données pré-remplies
+              import('./controllers/paymentController.js').then(module => {
+                module.showPaymentForm(reservationId, amount);
+              });
+            } else {
+              // Afficher la liste des paiements
+              import('./controllers/paymentController.js').then(module => {
+                module.loadPayments();
+              });
+            }
           }
         }
       }

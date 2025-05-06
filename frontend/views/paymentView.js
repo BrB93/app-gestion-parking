@@ -101,7 +101,15 @@ function renderPaymentActions(payment) {
   
   const isAdmin = currentUser.role === 'admin';
   
-  if ((isAdmin || currentUser.id == payment.user_id) && payment.isPending()) {
+  if (isAdmin && payment.isCompleted()) {
+    return `<button class="btn-cancel-payment" data-id="${payment.id}">Rembourser</button>`;
+  }
+  
+  if (isAdmin && payment.isPending()) {
+    return `<button class="btn-cancel-payment" data-id="${payment.id}">Annuler</button>`;
+  }
+  
+  if (!isAdmin && payment.isPending() && currentUser.id == payment.user_id) {
     return `
       <button class="btn-confirm-payment" data-id="${payment.id}">Confirmer</button>
       <button class="btn-cancel-payment" data-id="${payment.id}">Annuler</button>

@@ -210,6 +210,7 @@ export function showAvailabilityInfo(spotId) {
                 <p>Chargement des disponibilités...</p>
             </div>
             <button id="close-availability" class="btn-secondary">Fermer</button>
+            <button id="try-reserve" class="btn-primary">Essayer de réserver</button>
         </div>
     `;
     
@@ -219,15 +220,27 @@ export function showAvailabilityInfo(spotId) {
         document.body.removeChild(modalContainer);
     });
     
+    document.getElementById('try-reserve').addEventListener('click', () => {
+        document.body.removeChild(modalContainer);
+        showReservationForm(spotId);
+    });
+    
     getSpotAvailability(spotId).then(data => {
         const content = document.getElementById('availability-content');
         if (data.reservations && data.reservations.length > 0) {
             content.innerHTML = `
-                <p>Cette place est réservée pour les créneaux suivants:</p>
-                <ul>
-                    ${data.reservations.map(res => `<li>${new Date(res.start_time).toLocaleString()} - ${new Date(res.end_time).toLocaleString()}</li>`).join('')}
-                </ul>
-                <p>Vous pouvez réserver cette place en dehors de ces créneaux.</p>
+                <p>Cette place est déjà réservée pour les créneaux suivants:</p>
+                <div class="reservation-list">
+                    ${data.reservations.map(res => {
+                        const start = new Date(res.start_time).toLocaleString();
+                        const end = new Date(res.end_time).toLocaleString();
+                        return `<div class="reservation-slot">
+                            <p><strong>Du:</strong> ${start}</p>
+                            <p><strong>Au:</strong> ${end}</p>
+                        </div>`;
+                    }).join('')}
+                </div>
+                <p class="help-text">Veuillez choisir un créneau qui ne chevauche pas ces périodes.</p>
             `;
         } else {
             content.innerHTML = `<p>Cette place est entièrement disponible.</p>`;

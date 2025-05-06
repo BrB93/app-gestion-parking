@@ -493,6 +493,42 @@ body {
   font-size: 18px;
 }
 
+.alert {
+  padding: 10px 15px;
+  margin: 10px 0;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+}
+
+.reservation-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 15px 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.reservation-slot {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.reservation-slot:last-child {
+  border-bottom: none;
+}
+
+.help-text {
+  color: #6c757d;
+  font-style: italic;
+  margin-top: 10px;
+}
+
 @media (min-width: 992px) {
   .profile-container {
     flex-direction: row;

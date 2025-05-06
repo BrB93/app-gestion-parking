@@ -147,10 +147,27 @@ export function showReservationForm(spotId) {
                         return;
                     }
                     
+                    const submitButton = form.querySelector('button[type="submit"]');
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Traitement en cours...';
+                    
                     const result = await controllerModule.createReservation(reservationData);
                     
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Réserver et payer';
+                    
                     if (result.error) {
-                        errorElement.textContent = result.error;
+                        errorElement.innerHTML = `<div class="alert alert-danger">${result.error}</div>`;
+                        if (result.status === 409) {
+                            errorElement.innerHTML += `<p>Consultez les <a href="#" id="view-availability">disponibilités de cette place</a> pour choisir un autre créneau.</p>`;
+                            document.getElementById('view-availability').addEventListener('click', (e) => {
+                                e.preventDefault();
+                                document.body.removeChild(modalContainer);
+                                import('../controllers/parkingSpotController.js').then(controller => {
+                                    controller.showAvailabilityInfo(reservationData.spot_id);
+                                });
+                            });
+                        }
                     } else if (result.success) {
                         document.body.removeChild(modalContainer);
                         const priceElement = document.getElementById('reservation-price');
@@ -162,7 +179,15 @@ export function showReservationForm(spotId) {
                 document.getElementById('cancel-reservation-form').addEventListener('click', () => {
                     document.body.removeChild(modalContainer);
                 });
+            }).catch(error => {
+                console.error("Erreur lors de la récupération des détails de la place:", error);
+                modalContainer.innerHTML = '<div class="modal-content"><p>Erreur lors du chargement des détails de la place.</p></div>';
+                document.body.appendChild(modalContainer);
             });
+        }).catch(error => {
+            console.error("Erreur lors du chargement du contrôleur de places:", error);
+            modalContainer.innerHTML = '<div class="modal-content"><p>Une erreur est survenue.</p></div>';
+            document.body.appendChild(modalContainer);
         });
     }).catch(err => {
         console.error("Erreur lors du chargement des modules:", err);

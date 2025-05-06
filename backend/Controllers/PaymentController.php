@@ -19,25 +19,29 @@ class PaymentController {
         Auth::requireAuthentication();
         $currentUser = Auth::getCurrentUser();
         
-        if ($currentUser->getRole() === 'admin') {
-            $payments = $this->paymentRepo->getAllPayments();
-        } else {
-            $payments = $this->paymentRepo->getPaymentsByUserId($currentUser->getId());
+        try {
+            if ($currentUser->getRole() === 'admin') {
+                $payments = $this->paymentRepo->getAllPayments();
+            } else {
+                $payments = $this->paymentRepo->getPaymentsByUserId($currentUser->getId());
+            }
+            
+            header('Content-Type: application/json');
+            echo json_encode(array_map(function($payment) {
+                return [
+                    'id' => $payment->getId(),
+                    'reservation_id' => $payment->getReservationId(),
+                    'amount' => $payment->getAmount(),
+                    'method' => $payment->getMethod(),
+                    'status' => $payment->getStatus(),
+                    'timestamp' => $payment->getTimestamp()
+                ];
+            }, $payments));
+        } catch (\Exception $e) {
+            header('Content-Type: application/json');
+            http_response_code(500);
+            echo json_encode(['error' => 'Erreur lors du chargement des paiements: ' . $e->getMessage()]);
         }
-        
-        header('Content-Type: application/json');
-        echo json_encode(array_map(function($payment) {
-            return [
-                'id' => $payment->getId(),
-                'reservation_id' => $payment->getReservationId(),
-                'amount' => $payment->getAmount(),
-                'method' => $payment->getMethod(),
-                'method_label' => $payment->getMethodLabel(),
-                'status' => $payment->getStatus(),
-                'status_label' => $payment->getStatusLabel(),
-                'timestamp' => $payment->getTimestamp()
-            ];
-        }, $payments));
     }
 
     public function show($id) {
@@ -154,15 +158,18 @@ class PaymentController {
             return;
         }
         
+        $currentUser = Auth::getCurrentUser();
+        $reservation = $this->reservationRepo->getReservationById($payment->getReservationId());
+        
+        if (!$reservation || $reservation->getUserId() !== $currentUser->getId()) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Vous n\'êtes pas autorisé à confirmer ce paiement']);
+            return;
+        }
         
         $success = $this->paymentRepo->updatePaymentStatus($id, 'effectue');
         
         if ($success) {
-            $reservation = $this->reservationRepo->getReservationById($payment->getReservationId());
-            if ($reservation && $reservation->isPending()) {
-                $this->reservationRepo->updateStatus($reservation->getId(), 'confirmee');
-            }
-            
             echo json_encode(['success' => true, 'message' => 'Paiement confirmé avec succès']);
         } else {
             http_response_code(500);
@@ -181,13 +188,25 @@ class PaymentController {
             return;
         }
         
+        $currentUser = Auth::getCurrentUser();
+        $reservation = $this->reservationRepo->getReservationById($payment->getReservationId());
+        
+        if ($currentUser->getRole() !== 'admin' && 
+            (!$reservation || $reservation->getUserId() !== $currentUser->getId())) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Vous n\'êtes pas autorisé à annuler ce paiement']);
+            return;
+        }
+        
+        $actionMessage = $payment->isCompleted() ? 'remboursé' : 'annulé';
+        
         $success = $this->paymentRepo->updatePaymentStatus($id, 'echoue');
         
         if ($success) {
-            echo json_encode(['success' => true, 'message' => 'Paiement annulé avec succès']);
+            echo json_encode(['success' => true, 'message' => "Paiement $actionMessage avec succès"]);
         } else {
             http_response_code(500);
-            echo json_encode(['error' => 'Erreur lors de l\'annulation du paiement']);
+            echo json_encode(['error' => "Erreur lors de l'annulation du paiement"]);
         }
     }
     

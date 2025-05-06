@@ -57,15 +57,6 @@ export async function getReservation(reservationId) {
     }
 }
 
-export async function createReservation(reservationData) {
-    try {
-        const response = await postJSON("/app-gestion-parking/public/api/reservations/create", reservationData);
-        return response;
-    } catch (error) {
-        console.error("Erreur lors de la création de la réservation :", error);
-        return { error: error.message };
-    }
-}
 
 export async function updateReservation(reservationId, reservationData) {
     try {
@@ -130,6 +121,28 @@ export function setupReservationEvents() {
             };
         };
     });
+}
+
+export async function createReservation(reservationData) {
+    try {
+        const response = await fetch("/app-gestion-parking/public/api/reservations/create", {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(reservationData)
+        });
+        
+        const result = await response.json();
+        
+        return { 
+            ...result, 
+            status: response.status
+        };
+    } catch (error) {
+        console.error("Erreur lors de la création de la réservation :", error);
+        return { error: error.message };
+    }
 }
 
 function setupFormSubmission(id = null) {
