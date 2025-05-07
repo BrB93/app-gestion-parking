@@ -617,6 +617,334 @@ body {
   border-left: 5px solid #ffc107;
 }
 
+/* Vue 3D du parking */
+.parking-3d-scene {
+  width: 100%;
+  height: 700px;
+  position: relative;
+  overflow: hidden;
+  margin: 20px 0;
+  background-color: #333;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.parking-3d-viewport {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: rotateX(60deg);
+  transform-style: preserve-3d;
+  cursor: grab;
+  transition: transform 0.1s ease-out;
+}
+
+.parking-3d-floor {
+  position: absolute;
+  width: 3000px;
+  height: 3000px;
+  transform: translateX(-1500px) translateY(-1500px);
+  background-color: #333;
+  background-image: 
+    radial-gradient(rgba(200, 200, 200, 0.05) 2px, transparent 2px),
+    linear-gradient(90deg, transparent 98%, rgba(255, 255, 255, 0.1) 2%),
+    linear-gradient(transparent 98%, rgba(255, 255, 255, 0.1) 2%);
+  background-size: 30px 30px, 50px 50px, 50px 50px;
+  position: relative;
+}
+
+/* Places de stationnement dessinées sur le bitume */
+.parking-spot-area {
+  position: absolute;
+  border: 3px solid white;
+  box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Sections et étiquettes */
+.section-label {
+  position: absolute;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+}
+
+/* Entrée et sortie */
+.parking-entrance, .parking-exit {
+  position: absolute;
+  background-color: rgba(100, 100, 100, 0.7);
+  padding: 5px 20px;
+  border-radius: 5px;
+  color: white;
+  font-weight: bold;
+  z-index: 5;
+}
+
+.parking-entrance span, .parking-exit span {
+  text-shadow: 0 0 5px #000;
+}
+
+/* États des places */
+.parking-spot-area.status-available {
+  background-color: rgba(46, 204, 113, 0.15);
+  border-color: rgba(46, 204, 113, 0.8);
+}
+
+.parking-spot-area.status-reserved {
+  background-color: rgba(241, 196, 15, 0.15);
+  border-color: rgba(241, 196, 15, 0.8);
+}
+
+.parking-spot-area.status-occupied {
+  background-color: rgba(231, 76, 60, 0.15);
+  border-color: rgba(231, 76, 60, 0.8);
+}
+
+.parking-spot-area.status-unavailable {
+  background-color: rgba(150, 150, 150, 0.15);
+  border-color: rgba(150, 150, 150, 0.5);
+  border-style: dashed;
+  cursor: default;
+}
+
+/* Numéros des places */
+.spot-number {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 1px 1px 5px rgba(0,0,0,0.7);
+}
+
+/* Symboles spéciaux pour les types de places */
+.handicap-symbol, .electric-symbol {
+  position: absolute;
+  top: 25%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  fill: white;
+  opacity: 0.9;
+}
+
+/* Voiture modélisée en 3D simplifiée */
+.car-model {
+  position: absolute;
+  width: 80%;
+  height: 60%;
+  top: 20%;
+  left: 10%;
+  background-color: #222;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  transform: translateZ(5px);
+  opacity: 0.9;
+}
+
+/* Fenêtres de la voiture */
+.car-model:after {
+  content: '';
+  position: absolute;
+  top: 25%;
+  left: 15%;
+  width: 70%;
+  height: 30%;
+  background-color: rgba(150, 200, 255, 0.7);
+  border-radius: 3px;
+}
+
+/* Légende */
+.parking-legend {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background-color: rgba(0, 0, 0, 0.7);
+  border-radius: 5px;
+  padding: 10px;
+  color: white;
+  z-index: 100;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  border-radius: 4px;
+}
+
+.legend-color.status-available {
+  background-color: rgba(46, 204, 113, 0.8);
+}
+
+.legend-color.status-reserved {
+  background-color: rgba(241, 196, 15, 0.8);
+}
+
+.legend-color.status-occupied {
+  background-color: rgba(231, 76, 60, 0.8);
+}
+
+.legend-color.status-unavailable {
+  background-color: rgba(150, 150, 150, 0.5);
+  border: 1px dashed white;
+}
+
+/* Aide à la navigation */
+.navigation-helper {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+  color: white;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+}
+
+.compass {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.5);
+  margin-bottom: 10px;
+}
+
+.compass-north, .compass-south, .compass-east, .compass-west {
+  position: absolute;
+  font-weight: bold;
+}
+
+.compass-north {
+  top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.compass-south {
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.compass-east {
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+}
+
+.compass-west {
+  top: 50%;
+  left: 5px;
+  transform: translateY(-50%);
+}
+
+.zoom-level {
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 5px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+/* Contrôles */
+.parking-3d-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, 40px);
+  grid-gap: 5px;
+  z-index: 100;
+}
+
+.btn-rotate, .btn-zoom, .btn-reset {
+  width: 40px;
+  height: 40px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+.btn-reset {
+  grid-column: 1;
+  grid-row: 1;
+  background-color: rgba(52, 152, 219, 0.8);
+  color: white;
+}
+
+.btn-rotate[data-direction="up"] {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.btn-rotate[data-direction="left"] {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.btn-rotate[data-direction="right"] {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.btn-rotate[data-direction="down"] {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.btn-zoom[data-zoom="in"] {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.btn-zoom[data-zoom="out"] {
+  grid-column: 3;
+  grid-row: 3;
+}
+
+/* Effets de survol */
+.parking-spot-area:hover:not(.status-unavailable) {
+  box-shadow: 0 0 15px white;
+  z-index: 10;
+  transform: translateZ(3px);
+}
+
+.parking-spot-area:hover:not(.status-unavailable) .spot-number {
+  font-size: 16px;
+  text-shadow: 0 0 10px white;
+}
+
+.btn-rotate:hover, .btn-zoom:hover, .btn-reset:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.spots-stats {
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 5px;
+  border-radius: 4px;
+  text-align: center;
+  margin-top: 10px;
+  color: white;
+  font-weight: bold;
+}
 @keyframes dots {
   0%, 20% { content: "."; }
   40% { content: ".."; }

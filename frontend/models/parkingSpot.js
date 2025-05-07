@@ -38,4 +38,13 @@ export class ParkingSpot {
         default: return this.type;
       }
     }
+
+    getStatusLabel() {
+      switch (this.status) {
+        case 'libre': return 'Disponible';
+        case 'reservee': return 'Réservée';
+        case 'occupee': return 'Occupée';
+        default: return this.status;
+      }
+    }
   }

@@ -166,14 +166,16 @@ document.addEventListener("DOMContentLoaded", () => {
         if (checkProtectedRoute()) {
           const content = document.getElementById('app-content');
           if (content) {
-            content.innerHTML = '<h1>Places de Parking</h1><div id="parking-spot-list"></div>';
-            try {
-              const module = await import('./controllers/parkingSpotController.js');
-              module.loadParkingSpots();
-            } catch (error) {
-              console.error("Erreur lors du chargement du module des places de parking:", error);
-              content.innerHTML += `<p class="error-message">Erreur de chargement du module: ${error.message}</p>`;
-            }
+            const use3DView = localStorage.getItem('preferParkingView3D') === 'true';
+            
+            content.innerHTML = `
+              <h1>Gestion des Places de Parking</h1>
+              <div id="parking-spot-list"></div>
+            `;
+            
+            import('./controllers/parkingSpotController.js').then(module => {
+              module.loadParkingSpots(use3DView);
+            });
           }
         }
       }

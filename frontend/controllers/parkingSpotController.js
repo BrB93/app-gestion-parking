@@ -1,12 +1,13 @@
-import { fetchJSON, postJSON } from "../core/fetchWrapper.js";
-import { ParkingSpot } from "../models/ParkingSpot.js";
-import { renderParkingSpots, renderParkingSpotForm, renderDeleteConfirmation } from "../views/parkingSpotView.js";
-import { validateFormData } from "../core/validator.js";
-import { getCurrentUser } from "../controllers/authController.js";
+import { fetchJSON, postJSON } from '../core/fetchWrapper.js';
+import { ParkingSpot } from '../models/ParkingSpot.js';
+import { renderParkingSpots } from '../views/parkingSpotView.js';
+import { render3DParkingSpots } from '../views/parking3DView.js';
+import { validateFormData } from '../core/validator.js';
+import { getCurrentUser } from './authController.js';
 
-export async function loadParkingSpots() {
+export async function loadParkingSpots(use3DView = false) {
     try {
-        console.log("Chargement des places de parking...");
+        console.log(`Chargement des places de parking (vue ${use3DView ? '3D' : '2D'})...`);
         const data = await fetchJSON("/app-gestion-parking/public/api/parking-spots");
         console.log(`${data.length} places récupérées`);
         
@@ -19,7 +20,16 @@ export async function loadParkingSpots() {
             spot.pricing_id
         ));
         
-        renderParkingSpots(spots);
+        if (use3DView) {
+            import('../views/parkingSpotView.js').then(module => {
+                window.showSpotDetailsModal = module.showSpotDetailsModal;
+                
+                render3DParkingSpots(spots);
+            });
+        } else {
+            renderParkingSpots(spots);
+        }
+        
         setupParkingSpotEvents();
     } catch (error) {
         console.error("Erreur lors du chargement des places de parking:", error);
@@ -28,6 +38,23 @@ export async function loadParkingSpots() {
         if (container) {
             container.innerHTML = `<p class="error-message">Erreur de chargement: ${error.message}</p>`;
         }
+    }
+}
+
+export async function getParkingSpot(spotId) {
+    try {
+        const data = await fetchJSON(`/app-gestion-parking/public/api/parking-spots/${spotId}`);
+        return new ParkingSpot(
+            data.id, 
+            data.spot_number, 
+            data.type, 
+            data.status,
+            data.owner_id,
+            data.pricing_id
+        );
+    } catch (error) {
+        console.error(`Erreur lors de la récupération de la place ${spotId}:`, error);
+        return null;
     }
 }
 
@@ -55,23 +82,6 @@ export async function getFormData() {
     } catch (error) {
         console.error("Erreur lors du chargement des données du formulaire:", error);
         return { persons: [], pricings: [] };
-    }
-}
-
-export async function getParkingSpot(spotId) {
-    try {
-        const data = await fetchJSON(`/app-gestion-parking/public/api/parking-spots/${spotId}`);
-        return new ParkingSpot(
-            data.id, 
-            data.spot_number, 
-            data.type, 
-            data.status,
-            data.owner_id,
-            data.pricing_id
-        );
-    } catch (error) {
-        console.error(`Erreur lors de la récupération de la place ${spotId}:`, error);
-        return null;
     }
 }
 
@@ -247,3 +257,77 @@ export function showAvailabilityInfo(spotId) {
         }
     });
 }
+
+export async function createSpotWithNumber(spotNumber) {
+    try {
+      const formData = await getFormData();
+      
+      const section = spotNumber.charAt(0);
+      let type = 'normale';
+      
+      if (section === 'A' || section === 'F') {
+        type = 'normale';
+      } else if (section === 'B') {
+        type = 'handicapee';
+      } else if (section === 'E') {
+        type = 'electrique';
+      } else if (section === 'C' || section === 'D') {
+        type = 'reservee';
+      }
+      
+      const container = document.getElementById('app-content');
+      container.innerHTML = `
+        <h2>Configuration de la place ${spotNumber}</h2>
+        <form id="create-spot-form">
+          <div class="form-group">
+            <label for="spot_number">Numéro de place</label>
+            <input type="text" id="spot_number" name="spot_number" value="${spotNumber}" readonly>
+          </div>
+          <div class="form-group">
+            <label for="type">Type de place</label>
+            <select id="type" name="type" required>
+              <option value="normale" ${type === 'normale' ? 'selected' : ''}>Standard</option>
+              <option value="handicapee" ${type === 'handicapee' ? 'selected' : ''}>PMR</option>
+              <option value="reservee" ${type === 'reservee' ? 'selected' : ''}>Réservée</option>
+              <option value="electrique" ${type === 'electrique' ? 'selected' : ''}>Électrique</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="status">Statut initial</label>
+            <select id="status" name="status" required>
+              <option value="libre" selected>Libre</option>
+              <option value="reservee">Réservée</option>
+              <option value="occupee">Occupée</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="owner_id">Propriétaire (facultatif)</label>
+            <select id="owner_id" name="owner_id">
+              <option value="">-- Aucun --</option>
+              ${formData.users.filter(u => u.role === 'owner').map(user => 
+                `<option value="${user.id}">${user.username}</option>`
+              ).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="pricing_id">Tarification</label>
+            <select id="pricing_id" name="pricing_id">
+              <option value="">-- Par défaut --</option>
+              ${formData.pricings.map(pricing => 
+                `<option value="${pricing.id}">${pricing.name}</option>`
+              ).join('')}
+            </select>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Créer la place</button>
+            <button type="button" id="cancel-form" class="btn-secondary">Annuler</button>
+          </div>
+          <div id="form-error" class="error-message"></div>
+        </form>
+      `;
+      
+      setupFormSubmission();
+    } catch (error) {
+      console.error("Erreur lors de la création du formulaire de spot:", error);
+    }
+  }
