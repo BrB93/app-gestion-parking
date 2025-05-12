@@ -171,6 +171,17 @@ export function render3DParkingSpots(spots) {
                 });
               });
             });
+
+            if (!dbSpot) {
+              for (let i = 0; i < spots.length; i++) {
+                if (!spots[i].mapped && !isNaN(parseInt(spots[i].spot_number))) {
+                  dbSpot = spots[i];
+                  dbSpot.mapped = true;
+                  console.log(`Correspondance forcée: Place #${spots[i].spot_number} → ${spotNumber}`);
+                  break;
+                }
+              }
+            }
           } else {
             spotElement.addEventListener('click', () => {
               showUnassignedSpotMessage(spotNumber);
@@ -289,47 +300,12 @@ export function render3DParkingSpots(spots) {
   }
   
   function addRotationControls(viewport) {
-    let isDragging = false;
-    let previousX, previousY;
-    let rotateX = 60;
-    let rotateY = 0;
     let scale = 1;
     
-    updateRotation();
+    // Vue fixe à 90 degrés (parfaitement du dessus)
+    viewport.style.transform = `rotateX(90deg) rotateY(0deg)`;
     
-    function updateRotation() {
-      viewport.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-    }
-    
-    viewport.addEventListener('mousedown', (e) => {
-      isDragging = true;
-      previousX = e.clientX;
-      previousY = e.clientY;
-      viewport.style.cursor = 'grabbing';
-    });
-    
-    document.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      
-      const deltaX = e.clientX - previousX;
-      const deltaY = e.clientY - previousY;
-      
-      rotateY += deltaX * 0.5;
-      rotateX -= deltaY * 0.5;
-      
-      rotateX = Math.max(20, Math.min(85, rotateX));
-      
-      updateRotation();
-      
-      previousX = e.clientX;
-      previousY = e.clientY;
-    });
-    
-    document.addEventListener('mouseup', () => {
-      isDragging = false;
-      viewport.style.cursor = 'grab';
-    });
-    
+    // Conserver uniquement la fonction de zoom avec la molette
     viewport.parentElement.addEventListener('wheel', (e) => {
       e.preventDefault();
       const container = viewport.parentElement;
@@ -346,13 +322,10 @@ export function render3DParkingSpots(spots) {
       }
     });
     
+    // Simplifier les contrôles - uniquement zoom et reset
     const controlsDiv = document.createElement('div');
     controlsDiv.className = 'parking-3d-controls';
     controlsDiv.innerHTML = `
-      <button class="btn-rotate" data-direction="up">▲</button>
-      <button class="btn-rotate" data-direction="down">▼</button>
-      <button class="btn-rotate" data-direction="left">◄</button>
-      <button class="btn-rotate" data-direction="right">►</button>
       <button class="btn-zoom" data-zoom="in">+</button>
       <button class="btn-zoom" data-zoom="out">-</button>
       <button class="btn-reset" data-action="reset">R</button>
@@ -360,20 +333,7 @@ export function render3DParkingSpots(spots) {
     
     viewport.parentElement.appendChild(controlsDiv);
     
-    controlsDiv.querySelectorAll('.btn-rotate').forEach(button => {
-      button.addEventListener('click', () => {
-        const direction = button.dataset.direction;
-        switch(direction) {
-          case 'up': rotateX -= 10; break;
-          case 'down': rotateX += 10; break;
-          case 'left': rotateY -= 10; break;
-          case 'right': rotateY += 10; break;
-        }
-        rotateX = Math.max(20, Math.min(85, rotateX));
-        updateRotation();
-      });
-    });
-    
+    // Conserver les contrôles de zoom
     controlsDiv.querySelectorAll('.btn-zoom').forEach(button => {
       button.addEventListener('click', () => {
         const container = viewport.parentElement;
@@ -392,10 +352,7 @@ export function render3DParkingSpots(spots) {
     });
     
     controlsDiv.querySelector('.btn-reset').addEventListener('click', () => {
-      rotateX = 60;
-      rotateY = 0;
       scale = 1;
-      updateRotation();
       viewport.parentElement.style.transform = `scale(${scale})`;
       
       const zoomValue = document.getElementById('zoom-value');

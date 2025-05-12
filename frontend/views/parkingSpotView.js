@@ -393,77 +393,75 @@ function setupFormSubmission(id = null) {
 }
 
 export function renderParkingSpotForm(spot = null, formData = null) {
-    const isEditing = spot !== null;
-    const currentUser = getCurrentUser();
-    const isAdmin = currentUser && currentUser.role === 'admin';
-    
-    if (!isAdmin) return '';
-    
-    console.log("Données du formulaire:", formData);
-    
-    return `
-    <div class="form-container">
-        <h2>${isEditing ? 'Modifier' : 'Créer'} une place de parking</h2>
-        <form id="${isEditing ? 'edit-spot-form' : 'create-spot-form'}" data-id="${isEditing ? spot.id : ''}">
-            <div class="form-group">
-                <label for="spot_number">Numéro de place:</label>
-                <input type="text" id="spot_number" name="spot_number" value="${isEditing ? spot.spot_number : ''}" required>
-            </div>
-            <div class="form-group">
-                <label for="type">Type:</label>
-                <select id="type" name="type" required>
-                    <option value="normale" ${isEditing && spot.type === 'normale' ? 'selected' : ''}>Standard</option>
-                    <option value="handicapee" ${isEditing && spot.type === 'handicapee' ? 'selected' : ''}>PMR</option>
-                    <option value="reservee" ${isEditing && spot.type === 'reservee' ? 'selected' : ''}>Réservée</option>
-                    <option value="electrique" ${isEditing && spot.type === 'electrique' ? 'selected' : ''}>Électrique</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="status">Statut:</label>
-                <select id="status" name="status" required>
-                    <option value="libre" ${isEditing && spot.status === 'libre' ? 'selected' : ''}>Libre</option>
-                    <option value="reservee" ${isEditing && spot.status === 'reservee' ? 'selected' : ''}>Réservée</option>
-                    <option value="occupee" ${isEditing && spot.status === 'occupee' ? 'selected' : ''}>Occupée</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="owner_id">Propriétaire:</label>
-                <select id="owner_id" name="owner_id">
-                    <option value="">-- Aucun propriétaire --</option>
-                    ${formData && formData.persons && formData.persons.length > 0 ? 
-                        formData.persons.map(person => 
-                            `<option value="${person.id}" ${isEditing && spot.owner_id == person.id ? 'selected' : ''}>
-                                ${person.name || `Personne #${person.id}`}
-                            </option>`
-                        ).join('') : 
-                        '<option value="" disabled>Aucune personne disponible</option>'
-                    }
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="pricing_id">Tarification:</label>
-                <select id="pricing_id" name="pricing_id">
-                    <option value="">-- Aucune tarification --</option>
-                    ${formData && formData.pricings && formData.pricings.length > 0 ? 
-                        formData.pricings.map(pricing => 
-                            `<option value="${pricing.id}" ${isEditing && spot.pricing_id == pricing.id ? 'selected' : ''}>
-                                ${pricing.name} - ${pricing.price}€
-                            </option>`
-                        ).join('') : 
-                        '<option value="" disabled>Aucune tarification disponible</option>'
-                    }
-                </select>
-            </div>
-            <div class="form-group">
-                <button type="submit" class="btn-primary">${isEditing ? 'Mettre à jour' : 'Créer'}</button>
-                <button type="button" id="cancel-form" class="btn-secondary">Annuler</button>
-            </div>
-            <div id="form-error" class="error-message"></div>
-        </form>
-    </div>
-    `;
+  const isEditing = spot !== null;
+  
+  const owners = Array.isArray(formData?.users) ? formData.users : [];
+  const pricings = Array.isArray(formData?.pricings) ? formData.pricings : [];
+  
+  const formHTML = `
+      <div class="modal-content">
+          <h2>${isEditing ? 'Modifier' : 'Créer'} une place de parking</h2>
+          <form id="${isEditing ? 'edit-spot-form' : 'create-spot-form'}">
+              <!-- Champs du formulaire -->
+              <div class="form-group">
+                  <label for="spot_number">Numéro de place:</label>
+                  <input type="text" id="spot_number" name="spot_number" value="${spot ? spot.spot_number : ''}" ${isEditing ? 'readonly' : 'required'}>
+              </div>
+              
+              <div class="form-group">
+                  <label for="type">Type de place:</label>
+                  <select id="type" name="type" required>
+                      <option value="normale" ${spot && spot.type === 'normale' ? 'selected' : ''}>Standard</option>
+                      <option value="handicapee" ${spot && spot.type === 'handicapee' ? 'selected' : ''}>PMR</option>
+                      <option value="electrique" ${spot && spot.type === 'electrique' ? 'selected' : ''}>Borne électrique</option>
+                      <option value="reservee" ${spot && spot.type === 'reservee' ? 'selected' : ''}>Réservée</option>
+                  </select>
+              </div>
+              
+              <div class="form-group">
+                  <label for="status">Statut:</label>
+                  <select id="status" name="status" required>
+                      <option value="libre" ${!spot || spot.status === 'libre' ? 'selected' : ''}>Disponible</option>
+                      <option value="reservee" ${spot && spot.status === 'reservee' ? 'selected' : ''}>Réservée</option>
+                      <option value="occupee" ${spot && spot.status === 'occupee' ? 'selected' : ''}>Occupée</option>
+                  </select>
+              </div>
+              
+              <div class="form-group">
+                  <label for="owner_id">Propriétaire:</label>
+                  <select id="owner_id" name="owner_id">
+                      <option value="">Aucun propriétaire</option>
+                      ${owners.map(owner => `
+                          <option value="${owner.id}" ${spot && spot.owner_id === owner.id ? 'selected' : ''}>
+                              ${owner.name} (${owner.role})
+                          </option>
+                      `).join('')}
+                  </select>
+              </div>
+              
+              <div class="form-group">
+                  <label for="pricing_id">Tarification:</label>
+                  <select id="pricing_id" name="pricing_id">
+                      <option value="">Tarification par défaut</option>
+                      ${pricings.map(pricing => `
+                          <option value="${pricing.id}" ${spot && spot.pricing_id === pricing.id ? 'selected' : ''}>
+                              ${pricing.name} (${pricing.price_per_hour}€/h)
+                          </option>
+                      `).join('')}
+                  </select>
+              </div>
+              
+              <div class="form-actions">
+                  <button type="submit" class="btn-primary">${isEditing ? 'Mettre à jour' : 'Créer'}</button>
+                  <button type="button" id="cancel-form" class="btn-secondary">Annuler</button>
+              </div>
+              <div id="form-error" class="error-message"></div>
+          </form>
+      </div>
+  `;
+  
+  return formHTML;
 }
-
 export function renderDeleteConfirmation(spotId) {
     return `
     <div class="modal">

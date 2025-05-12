@@ -121,12 +121,20 @@ export function setupParkingSpotEvents() {
         createButton.addEventListener('click', async () => {
             try {
                 const formData = await getFormData();
-                const appContent = document.getElementById('app-content');
                 
-                if (appContent) {
-                    appContent.innerHTML = renderParkingSpotForm(null, formData);
-                    setupFormSubmission();
+                // Importer correctement le module de vue
+                const viewModule = await import('../views/parkingSpotView.js');
+                if (!viewModule.renderParkingSpotForm) {
+                    console.error("La fonction renderParkingSpotForm n'est pas disponible");
+                    return;
                 }
+                
+                const modalContainer = document.createElement('div');
+                modalContainer.className = 'modal-container';
+                modalContainer.innerHTML = viewModule.renderParkingSpotForm(null, formData);
+                document.body.appendChild(modalContainer);
+                
+                setupFormSubmission();
             } catch (error) {
                 console.error("Erreur lors de la création:", error);
             }

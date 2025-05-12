@@ -177,7 +177,13 @@ class ParkingSpotController {
         Auth::requireAuthentication();
         
         $userRepo = new \Repositories\UserRepository();
-        $users = $userRepo->getAllUsers();
+        $allUsers = $userRepo->getAllUsers();
+        
+        $owners = array_filter($allUsers, function($user) {
+            return $user->getRole() === 'owner';
+        });
+        
+        $owners = array_values($owners);
         
         $personRepo = new \Repositories\PersonRepository();
         $persons = $personRepo->getAllPersons();
@@ -187,26 +193,48 @@ class ParkingSpotController {
         
         $personsByUserId = [];
         foreach ($persons as $person) {
-            $personsByUserId[$person->getUserId()] = $person;
+            $userId = $person->getUserId();
+            if (!isset($personsByUserId[$userId])) {
+                $personsByUserId[$userId] = [];
+            }
+            $personsByUserId[$userId][] = [
+                'id' => $person->getId(),
+                'name' => $person->getFirstName() . ' ' . $person->getLastName()
+            ];
         }
         
         header('Content-Type: application/json');
         echo json_encode([
-            'persons' => array_map(function($person) {
+            'users' => array_map(function($user) use ($personsByUserId) {
                 return [
-                    'id' => $person->getUserId(),
-                    'name' => $person->getFirstName() . ' ' . $person->getLastName(),
-                    'user_id' => $person->getUserId()
+                    'id' => $user->getId(),
+                    'name' => $user->getUsername(),
+                    'role' => $user->getRole(),
+                    'persons' => $personsByUserId[$user->getId()] ?? []
                 ];
-            }, $persons),
+            }, $owners),
             'pricings' => array_map(function($pricing) {
                 return [
                     'id' => $pricing->getId(),
                     'name' => $pricing->getName(),
-                    'price' => $pricing->getPrice()
+                    'type_place' => $pricing->getTypePlace(),
+                    'price_per_hour' => $pricing->getPricePerHour()
                 ];
             }, $pricings)
         ]);
     }
     
+    public function createSpotWithNumber($spotNumber) {
+        Auth::requireRole('admin');
+        
+        $result = $this->spotRepo->createSpot($spotNumber, 'normale', 'libre', null, null);
+        
+        header('Content-Type: application/json');
+        if ($result) {
+            echo json_encode(['success' => true, 'message' => 'Place créée avec succès']);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Échec de la création de la place']);
+        }
+    }
 }
