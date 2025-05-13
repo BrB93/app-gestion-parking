@@ -1,13 +1,11 @@
 import { fetchJSON, postJSON } from '../core/fetchWrapper.js';
 import { ParkingSpot } from '../models/ParkingSpot.js';
 import { renderParkingSpots } from '../views/parkingSpotView.js';
-import { render3DParkingSpots } from '../views/parking3DView.js';
-import { validateFormData } from '../core/validator.js';
-import { getCurrentUser } from './authController.js';
+import { renderParkingSpots as render2DParkingSpots } from '../views/parking2DView.js';
 
-export async function loadParkingSpots(use3DView = false) {
+export async function loadParkingSpots(useDynamicView = false) {
     try {
-        console.log(`Chargement des places de parking (vue ${use3DView ? '3D' : '2D'})...`);
+        console.log(`Chargement des places de parking (vue ${useDynamicView ? 'dynamique' : 'simple'})...`);
         const data = await fetchJSON("/app-gestion-parking/public/api/parking-spots");
         console.log(`${data.length} places récupérées`);
         
@@ -20,12 +18,8 @@ export async function loadParkingSpots(use3DView = false) {
             spot.pricing_id
         ));
         
-        if (use3DView) {
-            import('../views/parkingSpotView.js').then(module => {
-                window.showSpotDetailsModal = module.showSpotDetailsModal;
-                
-                render3DParkingSpots(spots);
-            });
+        if (useDynamicView) {
+            render2DParkingSpots(spots);
         } else {
             renderParkingSpots(spots);
         }
@@ -157,35 +151,22 @@ export function setupFormSubmission(id = null) {
         window.location.href = '/app-gestion-parking/public/parking';
     });
 
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(form);
-        const spotData = {};
-    
-        formData.forEach((value, key) => {
-            if (value === '') {
-                if (key === 'owner_id' || key === 'pricing_id') {
-                    spotData[key] = null;
-                } else {
-                    spotData[key] = value;
-                }
-            } else {
-                spotData[key] = value;
-            }
-        });
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(form);
+    const spotData = {};
 
+    formData.forEach((value, key) => {
+        spotData[key] = value;
+    });
+        
         const validation = validateFormData(spotData);
-    
+        
         if (!validation.isValid) {
-            const errors = validation.errors;
-            let errorMessage = "Veuillez corriger les erreurs suivantes:\n";
-            for (const field in errors) {
-                errorMessage += `- ${errors[field]}\n`;
-            }
-            errorElement.textContent = errorMessage;
+            errorElement.textContent = validation.errors.join(', ');
             return;
         }
-    
+        
         try {
             let result;
             if (isEditing) {
@@ -193,15 +174,14 @@ export function setupFormSubmission(id = null) {
             } else {
                 result = await createParkingSpot(spotData);
             }
-        
-            if (result.error) {
-                errorElement.textContent = result.error;
-            } else if (result.success) {
+            
+            if (result.success) {
                 window.location.href = '/app-gestion-parking/public/parking';
+            } else {
+                errorElement.textContent = result.error || 'Une erreur est survenue';
             }
         } catch (error) {
-            console.error("Erreur lors de la soumission:", error);
-            errorElement.textContent = "Une erreur est survenue lors de la communication avec le serveur";
+            errorElement.textContent = error.message || 'Une erreur est survenue';
         }
     });
 }
@@ -240,9 +220,10 @@ export function showAvailabilityInfo(spotId) {
     
     document.getElementById('try-reserve').addEventListener('click', () => {
         document.body.removeChild(modalContainer);
-        showReservationForm(spotId);
+        import('../views/parkingSpotView.js').then(module => {
+            module.showReservationForm(spotId);
+        });
     });
-    
     getSpotAvailability(spotId).then(data => {
         const content = document.getElementById('availability-content');
         if (data.reservations && data.reservations.length > 0) {

@@ -132,13 +132,17 @@ function attachReservationEvents() {
  * Formulaire de réservation
  * @param {Object} options 
  */
-export function renderReservationForm({ spotId = null, userId = null, defaultStart = "", defaultEnd = "" } = {}) {
+export function renderReservationForm({ spotId = null, spotNumber = null, userId = null, defaultStart = "", defaultEnd = "" } = {}) {
   return `
     <div class="form-container">
-      <h2>Réserver une place</h2>
+      <h2>Réserver la place ${spotNumber || ''}</h2>
       <form id="reservation-form">
         <input type="hidden" name="spot_id" value="${spotId || ''}">
         <input type="hidden" name="user_id" value="${userId || ''}">
+        <div class="form-group">
+          <label for="spot_number">Numéro de place:</label>
+          <input type="text" id="spot_number" value="${spotNumber || ''}" readonly class="form-control-readonly">
+        </div>
         <div class="form-group">
           <label for="start_time">Date de début:</label>
           <input type="datetime-local" name="start_time" id="start_time" value="${defaultStart}" required>

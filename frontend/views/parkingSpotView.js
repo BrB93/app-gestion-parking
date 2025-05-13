@@ -66,117 +66,62 @@ export function renderParkingSpots(spots) {
 }
 
 export function showReservationForm(spotId) {
-    const container = document.getElementById('app-content') || document.body;
-    
-    const formContainer = document.createElement('div');
-    formContainer.className = 'reservation-form-container';
-    formContainer.id = 'reservation-form';
-    
-    import('../controllers/parkingSpotController.js').then(module => {
-      module.getParkingSpot(spotId).then(spot => {
-        import('../controllers/pricingController.js').then(pricingModule => {
-          pricingModule.getPricing(spot.pricing_id).then(pricing => {
-            const currentUser = getCurrentUser();
-            
-            formContainer.innerHTML = `
-              <div class="card reservation-card">
-                <div class="card-header">
-                  <h2>Réserver la place #${spot.spot_number}</h2>
-                  <button class="btn-close" id="close-reservation-form">&times;</button>
-                </div>
-                
-                <div class="card-body">
-                  <div class="spot-preview ${spot.getStatusClass()}">
-                    <span class="spot-number">${spot.spot_number}</span>
-                    <span class="spot-type">${spot.getTypeLabel()}</span>
-                  </div>
-                  
-                  <form id="create-reservation-form">
-                    <input type="hidden" name="spot_id" value="${spot.id}">
-                    <input type="hidden" name="pricing_id" value="${spot.pricing_id}">
-                    
-                    <div class="form-group">
-                      <label for="start_time">Date et heure de début</label>
-                      <input type="datetime-local" id="start_time" name="start_time" required
-                             min="${new Date(Date.now() + 15*60000).toISOString().slice(0, 16)}">
-                    </div>
-                    
-                    <div class="form-group">
-                      <label for="end_time">Date et heure de fin</label>
-                      <input type="datetime-local" id="end_time" name="end_time" required
-                             min="${new Date(Date.now() + 30*60000).toISOString().slice(0, 16)}">
-                    </div>
-                    
-                    <div class="form-group">
-                      <label for="vehicle_info">Informations du véhicule</label>
-                      <input type="text" id="vehicle_info" name="vehicle_info" placeholder="Modèle et plaque d'immatriculation">
-                    </div>
-                    
-                    <div class="pricing-summary">
-                      <h3>Tarification</h3>
-                      <p>Base: ${pricing.base_price}€/heure</p>
-                      <p>Jour (${pricing.daytime_start}-${pricing.daytime_end}): ${pricing.daytime_price}€/heure</p>
-                      <p>Nuit: ${pricing.nighttime_price}€/heure</p>
-                      ${pricing.weekend_price ? `<p>Week-end: ${pricing.weekend_price}€/heure</p>` : ''}
-                      
-                      <div class="total-price">
-                        <p>Estimation: <span id="estimated-price">--</span></p>
-                      </div>
-                    </div>
-                  </form>
-                </div>
-                
-                <div class="card-footer">
-                  <button id="cancel-reservation" class="btn-secondary">Annuler</button>
-                  <button id="submit-reservation" class="btn-primary">Confirmer la réservation</button>
-                </div>
-              </div>
-            `;
-            
-            container.appendChild(formContainer);
-            
-            setupPriceCalculation(pricing);
-            
-            document.getElementById('close-reservation-form').addEventListener('click', () => {
-              container.removeChild(formContainer);
-            });
-            
-            document.getElementById('cancel-reservation').addEventListener('click', () => {
-              container.removeChild(formContainer);
-            });
-            
-            document.getElementById('submit-reservation').addEventListener('click', () => {
-              submitReservation(spot.id);
-            });
-          }).catch(error => {
-            console.error("Erreur lors de la récupération du tarif:", error);
-            formContainer.innerHTML = `
-              <div class="error-message">
-                <p>Impossible de charger les informations de tarif. Veuillez réessayer.</p>
-                <button id="close-error" class="btn-primary">Fermer</button>
-              </div>
-            `;
-            
-            document.getElementById('close-error').addEventListener('click', () => {
-              container.removeChild(formContainer);
-            });
-          });
+  const container = document.getElementById('app-content') || document.body;
+  
+  const formContainer = document.createElement('div');
+  formContainer.className = 'reservation-form-container';
+  formContainer.id = 'reservation-form';
+  
+  import('../controllers/parkingSpotController.js').then(module => {
+    module.getParkingSpot(spotId).then(spot => {
+      if (!spot) {
+        formContainer.innerHTML = '<div class="error-message">Place de parking non trouvée</div>';
+        return;
+      }
+      
+      const currentUser = getCurrentUser();
+      
+      if (!currentUser) {
+        window.location.href = '/app-gestion-parking/public/login';
+        return;
+      }
+      
+      const now = new Date();
+      const startDate = new Date(now);
+      startDate.setHours(startDate.getHours() + 1);
+      startDate.setMinutes(0);
+      
+      const endDate = new Date(startDate);
+      endDate.setHours(endDate.getHours() + 1);
+      
+      const defaultStart = startDate.toISOString().slice(0, 16);
+      const defaultEnd = endDate.toISOString().slice(0, 16);
+      
+      import('../views/reservationView.js').then(reservationView => {
+        formContainer.innerHTML = reservationView.renderReservationForm({
+          spotId: spot.id,
+          spotNumber: spot.spot_number,
+          userId: currentUser.id,
+          defaultStart,
+          defaultEnd
         });
-      }).catch(error => {
-        console.error("Erreur lors de la récupération des informations de la place:", error);
-        formContainer.innerHTML = `
-          <div class="error-message">
-            <p>Impossible de charger les informations de la place. Veuillez réessayer.</p>
-            <button id="close-error" class="btn-primary">Fermer</button>
-          </div>
-        `;
         
-        document.getElementById('close-error').addEventListener('click', () => {
+        container.appendChild(formContainer);
+        
+        setupPriceCalculation(spot);
+        
+        document.getElementById('cancel-reservation-form').addEventListener('click', () => {
           container.removeChild(formContainer);
+        });
+        
+        document.getElementById('reservation-form').addEventListener('submit', (e) => {
+          e.preventDefault();
+          submitReservation(spotId);
         });
       });
     });
-  }
+  });
+}
 
 function renderSpotsGrid(spots, container) {
     if (spots.length === 0) {
@@ -391,76 +336,78 @@ function setupFormSubmission(id = null) {
         }
     });
 }
-
 export function renderParkingSpotForm(spot = null, formData = null) {
   const isEditing = spot !== null;
   
   const owners = Array.isArray(formData?.users) ? formData.users : [];
   const pricings = Array.isArray(formData?.pricings) ? formData.pricings : [];
   
-  const formHTML = `
-      <div class="modal-content">
-          <h2>${isEditing ? 'Modifier' : 'Créer'} une place de parking</h2>
-          <form id="${isEditing ? 'edit-spot-form' : 'create-spot-form'}">
-              <!-- Champs du formulaire -->
-              <div class="form-group">
-                  <label for="spot_number">Numéro de place:</label>
-                  <input type="text" id="spot_number" name="spot_number" value="${spot ? spot.spot_number : ''}" ${isEditing ? 'readonly' : 'required'}>
-              </div>
+  return `
+    <div class="form-container">
+      <h2>${isEditing ? 'Modifier' : 'Créer'} une place de parking</h2>
+      <form id="${isEditing ? 'edit-spot-form' : 'create-spot-form'}" data-id="${isEditing ? spot.id : ''}">
+        <div class="form-group">
+          <label for="spot_number">Numéro de place:</label>
+          <input type="text" id="spot_number" name="spot_number" value="${isEditing ? spot.spot_number : ''}" required>
+        </div>
+        <div class="form-group">
+          <label for="type">Type de place:</label>
+          <select id="type" name="type" required>
+            <option value="normale" ${isEditing && spot.type === 'normale' ? 'selected' : ''}>Standard</option>
+            <option value="handicapee" ${isEditing && spot.type === 'handicapee' ? 'selected' : ''}>PMR</option>
+            <option value="electrique" ${isEditing && spot.type === 'electrique' ? 'selected' : ''}>Borne électrique</option>
+            <option value="reservee" ${isEditing && spot.type === 'reservee' ? 'selected' : ''}>Réservée</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="status">Statut:</label>
+          <select id="status" name="status" required>
+            <option value="libre" ${isEditing && spot.status === 'libre' ? 'selected' : ''}>Disponible</option>
+            <option value="reservee" ${isEditing && spot.status === 'reservee' ? 'selected' : ''}>Réservée</option>
+            <option value="occupee" ${isEditing && spot.status === 'occupee' ? 'selected' : ''}>Occupée</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="owner_id">Propriétaire:</label>
+          <select id="owner_id" name="owner_id">
+            <option value="">-- Aucun propriétaire --</option>
+            ${owners.map(owner => `
+              <option value="${owner.id}" ${isEditing && spot.owner_id == owner.id ? 'selected' : ''}>
+                ${owner.username} (${owner.role})
+              </option>
+            `).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="pricing_id">Tarification:</label>
+          <select id="pricing_id" name="pricing_id">
+            <option value="">Tarification par défaut</option>
+            ${pricings.map(pricing => {
+              let pricingName = '';
+              if (typeof pricing.getName === 'function') {
+                pricingName = pricing.getName();
+              } else if (pricing.name) {
+                pricingName = pricing.name;
+              } else {
+                pricingName = `${pricing.type_place} - ${pricing.day_of_week}`;
+              }
               
-              <div class="form-group">
-                  <label for="type">Type de place:</label>
-                  <select id="type" name="type" required>
-                      <option value="normale" ${spot && spot.type === 'normale' ? 'selected' : ''}>Standard</option>
-                      <option value="handicapee" ${spot && spot.type === 'handicapee' ? 'selected' : ''}>PMR</option>
-                      <option value="electrique" ${spot && spot.type === 'electrique' ? 'selected' : ''}>Borne électrique</option>
-                      <option value="reservee" ${spot && spot.type === 'reservee' ? 'selected' : ''}>Réservée</option>
-                  </select>
-              </div>
-              
-              <div class="form-group">
-                  <label for="status">Statut:</label>
-                  <select id="status" name="status" required>
-                      <option value="libre" ${!spot || spot.status === 'libre' ? 'selected' : ''}>Disponible</option>
-                      <option value="reservee" ${spot && spot.status === 'reservee' ? 'selected' : ''}>Réservée</option>
-                      <option value="occupee" ${spot && spot.status === 'occupee' ? 'selected' : ''}>Occupée</option>
-                  </select>
-              </div>
-              
-              <div class="form-group">
-                  <label for="owner_id">Propriétaire:</label>
-                  <select id="owner_id" name="owner_id">
-                      <option value="">Aucun propriétaire</option>
-                      ${owners.map(owner => `
-                          <option value="${owner.id}" ${spot && spot.owner_id === owner.id ? 'selected' : ''}>
-                              ${owner.name} (${owner.role})
-                          </option>
-                      `).join('')}
-                  </select>
-              </div>
-              
-              <div class="form-group">
-                  <label for="pricing_id">Tarification:</label>
-                  <select id="pricing_id" name="pricing_id">
-                      <option value="">Tarification par défaut</option>
-                      ${pricings.map(pricing => `
-                          <option value="${pricing.id}" ${spot && spot.pricing_id === pricing.id ? 'selected' : ''}>
-                              ${pricing.name} (${pricing.price_per_hour}€/h)
-                          </option>
-                      `).join('')}
-                  </select>
-              </div>
-              
-              <div class="form-actions">
-                  <button type="submit" class="btn-primary">${isEditing ? 'Mettre à jour' : 'Créer'}</button>
-                  <button type="button" id="cancel-form" class="btn-secondary">Annuler</button>
-              </div>
-              <div id="form-error" class="error-message"></div>
-          </form>
-      </div>
+              return `
+                <option value="${pricing.id}" ${isEditing && spot.pricing_id == pricing.id ? 'selected' : ''}>
+                  ${pricingName}
+                </option>
+              `;
+            }).join('')}
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">${isEditing ? 'Mettre à jour' : 'Créer'}</button>
+          <button type="button" id="cancel-form" class="btn-secondary">Annuler</button>
+        </div>
+        <div id="form-error" class="error-message"></div>
+      </form>
+    </div>
   `;
-  
-  return formHTML;
 }
 export function renderDeleteConfirmation(spotId) {
     return `
@@ -477,7 +424,7 @@ export function renderDeleteConfirmation(spotId) {
     `;
 }
 
-function setupPriceCalculation(pricing) {
+function setupBasicPriceCalculation(pricing) {
     const startTimeInput = document.getElementById('start_time');
     const endTimeInput = document.getElementById('end_time');
     const estimatedPriceElement = document.getElementById('estimated-price');
@@ -502,155 +449,157 @@ function setupPriceCalculation(pricing) {
     
     startTimeInput.addEventListener('change', calculatePrice);
     endTimeInput.addEventListener('change', calculatePrice);
-  }
+}
+
+  function setupPriceCalculation(spot) {
+  const startInput = document.getElementById('start_time');
+  const endInput = document.getElementById('end_time');
+  const priceElement = document.getElementById('reservation-price');
   
-  function submitReservation(spotId) {
-    const form = document.getElementById('create-reservation-form');
-    const formData = new FormData(form);
-    const data = {};
+  const updatePrice = async () => {
+    const startTime = startInput.value;
+    const endTime = endInput.value;
     
-    for (let [key, value] of formData.entries()) {
-      data[key] = value;
-    }
-    
-    if (!data.start_time || !data.end_time) {
-      alert('Veuillez renseigner les dates de début et de fin.');
-      return;
-    }
-    
-    const startTime = new Date(data.start_time);
-    const endTime = new Date(data.end_time);
-    
-    if (startTime >= endTime) {
-      alert('La date de fin doit être postérieure à la date de début.');
-      return;
-    }
-    
-    const submitBtn = document.getElementById('submit-reservation');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="loading-spinner"></span> Traitement...';
-    
-    import('../controllers/reservationController.js').then(module => {
-      module.createReservation(data).then(reservationId => {
-        window.location.href = `/app-gestion-parking/public/reservations?success=true&id=${reservationId}`;
-      }).catch(error => {
-        console.error('Erreur lors de la création de la réservation:', error);
-        alert('Une erreur est survenue lors de la création de la réservation. Veuillez réessayer.');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Confirmer la réservation';
-      });
-    });
-  }
-  
-  export function showSpotDetailsModal(spot) {
-    const modalContainer = document.createElement('div');
-    modalContainer.className = 'modal-container';
-    modalContainer.id = 'spot-details-modal';
-    
-    let pricingInfo = '';
-    try {
-      import('../controllers/pricingController.js').then(pricingModule => {
-        if (spot.pricing_id) {
-          pricingModule.getPricing(spot.pricing_id).then(pricing => {
-            const pricingElement = document.getElementById('spot-pricing-info');
-            if (pricingElement) {
-              pricingElement.innerHTML = `
-                <p><strong>Tarif:</strong> ${pricing.base_price}€/heure</p>
-                <p><strong>Tarif jour:</strong> ${pricing.daytime_price}€/heure (${pricing.daytime_start}-${pricing.daytime_end})</p>
-                <p><strong>Tarif nuit:</strong> ${pricing.nighttime_price}€/heure</p>
-                ${pricing.weekend_price ? `<p><strong>Tarif week-end:</strong> ${pricing.weekend_price}€/heure</p>` : ''}
-              `;
-            }
-          });
+    if (startTime && endTime) {
+      import('../controllers/pricingController.js').then(async pricingModule => {
+        try {
+          const result = await pricingModule.calculatePrice(spot.id, startTime, endTime);
+          if (result.success) {
+            priceElement.textContent = result.formatted_price;
+          } else {
+            priceElement.textContent = 'Erreur de calcul';
+          }
+        } catch (error) {
+          console.error('Erreur lors du calcul du prix:', error);
+          priceElement.textContent = 'Erreur de calcul';
         }
       });
-    } catch (error) {
-      console.log('Impossible de récupérer les tarifs', error);
     }
+  };
+  
+  if (startInput && endInput) {
+    startInput.addEventListener('change', updatePrice);
+    endInput.addEventListener('change', updatePrice);
     
-    const statusLabel = spot.status === 'libre' ? 'Disponible' : 
-                       (spot.status === 'reservee' ? 'Réservée' : 'Occupée');
+    updatePrice();
+  }
+}
+  
+function submitReservation(spotId) {
+  const form = document.getElementById('reservation-form');
+  
+  if (!form || form.nodeName !== 'FORM') {
+    console.error('Formulaire de réservation non trouvé ou non valide');
     
-    const statusClass = spot.status === 'libre' ? 'badge-success' : 
-                       (spot.status === 'reservee' ? 'badge-warning' : 'badge-danger');
-    
-    modalContainer.innerHTML = `
-      <div class="modal-content spot-detail-modal">
-        <div class="modal-header">
-          <h2>Place de parking #${spot.spot_number}</h2>
-          <span class="status-badge ${statusClass}">${statusLabel}</span>
-        </div>
-        
-        <div class="modal-body">
-          <div class="spot-info-grid">
-            <div class="spot-main-info">
-              <p><strong>Type:</strong> ${spot.getTypeLabel()}</p>
-              <p><i class="icon ${spot.type === 'handicapee' ? 'icon-handicap' : 
-                                (spot.type === 'electrique' ? 'icon-electric' : 'icon-standard')}"></i></p>
-              <div id="spot-pricing-info" class="pricing-info">
-                <p><em>Chargement des tarifs...</em></p>
-              </div>
-            </div>
-            
-            <div class="spot-visual">
-              <div class="spot-3d-preview ${spot.getStatusClass()}">
-                <span>${spot.spot_number}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="modal-footer">
-          ${spot.status === 'libre' ? `
-            <button id="reserve-spot-btn" class="btn-primary btn-reserve" data-id="${spot.id}">
-              <i class="icon icon-calendar"></i> Réserver maintenant
-            </button>
-          ` : (spot.status === 'reservee' ? `
-            <button class="btn-secondary" disabled>Place déjà réservée</button>
-          ` : `
-            <button class="btn-secondary" disabled>Place occupée</button>
-          `)}
-          <button id="close-spot-details" class="btn-secondary">Fermer</button>
+    const formContainer = document.querySelector('.reservation-form-container');
+    if (formContainer) {
+      const formElement = formContainer.querySelector('form');
+      if (formElement) {
+        processReservationForm(formElement, spotId);
+        return;
+      }
+    }
+    return;
+  }
+  
+  processReservationForm(form, spotId);
+}
+
+function processReservationForm(form, spotId) {
+  const formData = new FormData(form);
+  const reservationData = {};
+  
+  formData.forEach((value, key) => {
+    reservationData[key] = value;
+  });
+  
+  import('../controllers/reservationController.js').then(async module => {
+    try {
+      const result = await module.createReservation(reservationData);
+      
+      if (result.error) {
+        const errorElement = document.getElementById('form-error');
+        if (errorElement) {
+          errorElement.textContent = result.error;
+        }
+      } else if (result.success) {
+        if (result.redirect_to_payment) {
+          window.location.href = result.redirect_to_payment;
+        } else {
+          window.location.href = '/app-gestion-parking/public/reservations';
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de la création de la réservation:', error);
+      const errorElement = document.getElementById('form-error');
+      if (errorElement) {
+        errorElement.textContent = 'Une erreur est survenue lors de la création de la réservation.';
+      }
+    }
+  });
+}
+  
+export function showSpotDetailsModal(spot) {
+  const modalContainer = document.createElement('div');
+  modalContainer.className = 'modal-container';
+  modalContainer.id = 'spot-details-modal';
+  
+  modalContainer.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Place ${spot.spot_number}</h2>
+        <span class="status-badge ${spot.getStatusClass()}">${spot.getStatusLabel()}</span>
+      </div>
+      <div class="modal-body">
+        <p><strong>Type:</strong> ${spot.getTypeLabel()}</p>
+        <p><strong>Statut:</strong> ${spot.getStatusLabel()}</p>
+        <div id="pricing-info">
+          <p><strong>Tarification:</strong> <span id="pricing-label">Chargement...</span></p>
         </div>
       </div>
-    `;
-    
-    document.body.appendChild(modalContainer);
-    
-    setTimeout(() => {
-      modalContainer.classList.add('active');
-    }, 10);
-    
-    document.getElementById('close-spot-details').addEventListener('click', () => {
-      modalContainer.classList.remove('active');
-      setTimeout(() => {
-        document.body.removeChild(modalContainer);
-      }, 300);
+      <div class="modal-footer">
+        ${spot.isAvailable() ? `<button id="reserve-spot-btn" class="btn-primary" data-id="${spot.id}">Réserver</button>` : ''}
+        <button id="view-availability-btn" class="btn-secondary" data-id="${spot.id}">Voir disponibilités</button>
+        <button id="close-spot-details" class="btn-secondary">Fermer</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modalContainer);
+  
+  document.getElementById('close-spot-details').addEventListener('click', () => {
+    document.body.removeChild(modalContainer);
+  });
+
+  if (spot.isAvailable()) {
+    document.getElementById('reserve-spot-btn').addEventListener('click', () => {
+      document.body.removeChild(modalContainer);
+      showReservationForm(spot.id);
     });
-    
-    modalContainer.addEventListener('click', (e) => {
-      if (e.target === modalContainer) {
-        modalContainer.classList.remove('active');
-        setTimeout(() => {
-          document.body.removeChild(modalContainer);
-        }, 300);
-      }
+  }
+  
+  document.getElementById('view-availability-btn').addEventListener('click', () => {
+    document.body.removeChild(modalContainer);
+    import('../controllers/parkingSpotController.js').then(module => {
+      module.showAvailabilityInfo(spot.id);
     });
-    
-    const reserveBtn = document.getElementById('reserve-spot-btn');
-    if (reserveBtn) {
-      reserveBtn.addEventListener('click', () => {
-        reserveBtn.classList.add('btn-clicked');
-        
-        reserveBtn.innerHTML = '<i class="icon icon-loading"></i> Chargement...';
-        
-        setTimeout(() => {
-          modalContainer.classList.remove('active');
-          setTimeout(() => {
-            document.body.removeChild(modalContainer);
-            showReservationForm(spot.id);
-          }, 300);
-        }, 500);
+  });
+  
+  if (spot.pricing_id) {
+    import('../controllers/pricingController.js').then(pricingModule => {
+      pricingModule.getPricingsByType(spot.type).then(pricings => {
+        const pricingEl = document.getElementById('pricing-label');
+        if (pricingEl) {
+          const matchingPricing = pricings.find(p => p.id == spot.pricing_id);
+          pricingEl.textContent = matchingPricing ? matchingPricing.getName() : 'Tarification standard';
+        }
       });
+    });
+  } else {
+    const pricingEl = document.getElementById('pricing-label');
+    if (pricingEl) {
+      pricingEl.textContent = 'Tarification par défaut';
     }
   }
+}
+
