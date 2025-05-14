@@ -74,7 +74,7 @@ class ReservationRepository {
         $stmt->bindParam(':start_time', $startTime, PDO::PARAM_STR);
         $stmt->bindParam(':end_time', $endTime, PDO::PARAM_STR);
         $stmt->bindParam(':status', $status, PDO::PARAM_STR);
-    
+        
         if ($stmt->execute()) {
             return (int)$this->db->lastInsertId();
         }

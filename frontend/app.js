@@ -4,7 +4,7 @@ import { loadParkingSpots } from "./controllers/parkingSpotController.js";
 import { loadPersons } from "./controllers/personController.js";
 import { loadReservations } from "./controllers/reservationController.js";
 import { Router } from './core/router.js';
-import { checkAuthStatus, initLoginForm, checkProtectedRoute, getCurrentUser } from './controllers/authController.js';
+import { initLoginForm, checkAuthStatus, checkProtectedRoute, getCurrentUser } from './controllers/authController.js';
 import { renderUserForm } from './views/userView.js';
 import { renderPersonForm } from './views/personView.js';
 import { validateFormData } from './core/validator.js';

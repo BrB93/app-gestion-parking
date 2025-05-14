@@ -36,15 +36,14 @@ export function renderNavbar() {
                 module.logout();
             });
         });
-    } else {
-        const loginLink = document.createElement('a');
-        loginLink.href = '/app-gestion-parking/public/login';
-        loginLink.setAttribute('data-route', '/app-gestion-parking/public/login');
-        loginLink.textContent = 'Connexion';
-        loginLink.style.color = 'white';
-        
-        const linkContainer = document.createElement('div');
-        linkContainer.appendChild(loginLink);
-        nav.appendChild(linkContainer);
-    }
+  } else {
+    const loginLink = document.createElement('a');
+    loginLink.href = '/app-gestion-parking/public/login';
+    loginLink.textContent = 'Connexion';
+    loginLink.style.color = 'white';
+    
+    const linkContainer = document.createElement('div');
+    linkContainer.appendChild(loginLink);
+    nav.appendChild(linkContainer);
+  }
 }

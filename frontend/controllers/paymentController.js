@@ -214,39 +214,13 @@ export function setupPaymentEvents() {
 export function showPaymentForm(reservationId, amount) {
   console.log("showPaymentForm appelé avec:", reservationId, amount);
   
-  if (!reservationId && window.paymentData) {
-    reservationId = window.paymentData.reservationId;
-    amount = window.paymentData.amount;
-    console.log("Données récupérées depuis window.paymentData:", reservationId, amount);
-  }
-
-  if (!reservationId) {
-    const urlParams = new URLSearchParams(window.location.search);
-    reservationId = urlParams.get('reservation_id');
-    amount = urlParams.get('amount');
-    console.log("Données récupérées depuis l'URL:", reservationId, amount);
-  }
-
-  if (typeof amount === 'string') {
-    amount = parseFloat(amount);
-  }
-  
   const modalContainer = document.createElement('div');
   modalContainer.className = 'modal-container';
   modalContainer.id = 'payment-modal';
   
-  function continueWithPayment() {
-    console.log("Affichage du formulaire de paiement avec:", reservationId, amount);
-    const container = document.getElementById('payment-gateway-container');
-    
-    modalContainer.innerHTML = renderPaymentForm(reservationId, amount);
-    
-    if (container) {
-      container.innerHTML = '';
-      container.appendChild(modalContainer);
-    } else {
-      document.body.appendChild(modalContainer);
-    }
+  import('../views/paymentView.js').then(module => {
+    modalContainer.innerHTML = module.renderPaymentForm(reservationId, amount);
+    document.body.appendChild(modalContainer);
     
     const form = document.getElementById('payment-form');
     const cancelBtn = document.getElementById('cancel-payment-form');
@@ -254,157 +228,113 @@ export function showPaymentForm(reservationId, amount) {
     if (form) {
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
-        const method = document.querySelector('input[name="payment_method"]:checked').value;
-        const errorElement = document.getElementById('form-error');
+        const formData = new FormData(form);
+        const paymentMethod = formData.get('payment_method');
         
         try {
-          let paymentData = {};
+          const submitForm = document.createElement('form');
+          submitForm.method = 'POST';
+          submitForm.action = '/app-gestion-parking/public/payment-gateway.php';
+          submitForm.style.display = 'none';
           
-          if (method === 'cb') {
-            paymentData = {
-              card_number: document.getElementById('card_number').value,
-              card_expiry: document.getElementById('card_expiry').value,
-              card_cvv: document.getElementById('card_cvv').value
-            };
-          } else if (method === 'paypal') {
-            paymentData = {
-              paypal_email: document.getElementById('paypal_email').value
-            };
+          const reservationIdField = document.createElement('input');
+          reservationIdField.type = 'hidden';
+          reservationIdField.name = 'reservation_id';
+          reservationIdField.value = reservationId;
+          
+          const amountField = document.createElement('input');
+          amountField.type = 'hidden';
+          amountField.name = 'amount';
+          amountField.value = amount;
+          
+          const paymentMethodField = document.createElement('input');
+          paymentMethodField.type = 'hidden';
+          paymentMethodField.name = 'payment_method';
+          paymentMethodField.value = paymentMethod;
+          
+          if (paymentMethod === 'cb') {
+            const cardNumberField = document.createElement('input');
+            cardNumberField.type = 'hidden';
+            cardNumberField.name = 'card_number';
+            cardNumberField.value = formData.get('card_number');
+            
+            const expiryDateField = document.createElement('input');
+            expiryDateField.type = 'hidden';
+            expiryDateField.name = 'expiry_date';
+            expiryDateField.value = formData.get('expiry_date');
+            
+            const cvvField = document.createElement('input');
+            cvvField.type = 'hidden';
+            cvvField.name = 'cvv';
+            cvvField.value = formData.get('cvv');
+            
+            const cardholderField = document.createElement('input');
+            cardholderField.type = 'hidden';
+            cardholderField.name = 'cardholder_name';
+            cardholderField.value = formData.get('cardholder_name');
+            
+            submitForm.appendChild(cardNumberField);
+            submitForm.appendChild(expiryDateField);
+            submitForm.appendChild(cvvField);
+            submitForm.appendChild(cardholderField);
           }
           
-          const submitButton = form.querySelector('button[type="submit"]');
-          submitButton.disabled = true;
-          submitButton.textContent = 'Traitement en cours...';
-          
-          const result = await processPayment(reservationId, amount, method, paymentData);
-          
-          if (result.success) {
-            const container = document.getElementById('payment-gateway-container');
-            if (container) {
-              container.innerHTML = `
-                <div class="success-message">
-                  <h2>Paiement effectué avec succès!</h2>
-                  <p>Votre réservation a été confirmée.</p>
-                  <a href="/app-gestion-parking/public/payments" class="btn-primary">Voir mes paiements</a>
-                </div>
-              `;
-            } else {
-              document.body.removeChild(modalContainer);
-              alert("Paiement effectué avec succès!");
-              window.location.href = "/app-gestion-parking/public/payments";
-            }
-          } else {
-            submitButton.disabled = false;
-            submitButton.textContent = 'Payer';
-            errorElement.textContent = result.error || "Une erreur est survenue lors du paiement";
-          }
+          submitForm.appendChild(reservationIdField);
+          submitForm.appendChild(amountField);
+          submitForm.appendChild(paymentMethodField);
+          document.body.appendChild(submitForm);
+          submitForm.submit();
         } catch (error) {
-          console.error("Erreur:", error);
-          errorElement.textContent = "Une erreur est survenue lors du paiement";
+          console.error('Erreur lors du traitement du paiement:', error);
+          const errorElement = document.getElementById('payment-error');
+          if (errorElement) errorElement.textContent = "Une erreur est survenue lors du traitement du paiement";
         }
       });
     }
     
     if (cancelBtn) {
       cancelBtn.addEventListener('click', () => {
-        const container = document.getElementById('payment-gateway-container');
-        if (container) {
-          container.innerHTML = `
-            <div class="info-message">
-              <p>Paiement annulé.</p>
-              <a href="/app-gestion-parking/public/reservations" class="btn-primary">Retour aux réservations</a>
-            </div>
-          `;
-        } else {
-          document.body.removeChild(modalContainer);
-          window.location.href = "/app-gestion-parking/public/reservations";
-        }
+        document.body.removeChild(modalContainer);
       });
     }
     
-    setupPaymentMethodToggle();
-  }
-
-  if (!reservationId || isNaN(amount)) {
-    console.error("Données invalides pour le paiement:", reservationId, amount);
-    const container = document.getElementById('payment-gateway-container');
-    if (container) {
-      container.innerHTML = `
-        <div class="error-message">
-          <h2>Données de paiement manquantes</h2>
-          <p>Impossible de charger le formulaire de paiement. Données requises non fournies.</p>
-          <a href="/app-gestion-parking/public/reservations" class="btn-primary">Retour aux réservations</a>
-        </div>
-      `;
+    const paymentMethodInputs = document.querySelectorAll('input[name="payment_method"]');
+    const cbDetails = document.getElementById('cb-details');
+    const paypalDetails = document.getElementById('paypal-details');
+    
+    if (paymentMethodInputs.length && cbDetails && paypalDetails) {
+      paymentMethodInputs.forEach(input => {
+        input.addEventListener('change', () => {
+          if (input.value === 'cb') {
+            cbDetails.style.display = 'block';
+            paypalDetails.style.display = 'none';
+          } else {
+            cbDetails.style.display = 'none';
+            paypalDetails.style.display = 'block';
+          }
+        });
+      });
     }
-    return;
-  }
-
-  if (!isNaN(amount) && amount > 0) {
-    continueWithPayment();
-  } else {
-    import('../controllers/reservationController.js').then(async module => {
-      try {
-        const reservation = await module.getReservation(reservationId);
-        if (reservation) {
-          import('./pricingController.js').then(async pricingModule => {
-            try {
-              const result = await pricingModule.calculatePrice(
-                reservation.spot_id,
-                reservation.start_time,
-                reservation.end_time
-              );
-              
-              if (!result.error) {
-                amount = result.price;
-              } else {
-                amount = 5.00;
-              }
-              continueWithPayment();
-            } catch (err) {
-              console.error("Erreur lors du calcul du prix:", err);
-              amount = 5.00;
-              continueWithPayment();
-            }
-          });
-        } else {
-          amount = 5.00;
-          continueWithPayment();
-        }
-      } catch (error) {
-        console.error("Erreur lors de la récupération de la réservation:", error);
-        amount = 5.00;
-        continueWithPayment();
-      }
-    });
-  }
+  });
+}
   
   function setupPaymentMethodToggle() {
     const paymentMethodInputs = document.querySelectorAll('input[name="payment_method"]');
-    const paymentDetails = document.querySelectorAll('.payment-method-details');
+    const cbDetails = document.getElementById('cb-details');
+    const paypalDetails = document.getElementById('paypal-details');
     
-    if (paymentMethodInputs.length === 0) return;
-    
-    paymentMethodInputs.forEach(input => {
-      input.addEventListener('change', () => {
-        paymentDetails.forEach(detail => {
-          detail.style.display = 'none';
-        });
-        
-        const selectedMethod = document.querySelector('input[name="payment_method"]:checked');
-        if (selectedMethod) {
-          const detailsElement = document.getElementById(`${selectedMethod.value}_details`);
-          if (detailsElement) {
-            detailsElement.style.display = 'block';
+    if (paymentMethodInputs.length && cbDetails && paypalDetails) {
+      paymentMethodInputs.forEach(input => {
+        input.addEventListener('change', () => {
+          if (input.value === 'cb') {
+            cbDetails.style.display = 'block';
+            paypalDetails.style.display = 'none';
+          } else {
+            cbDetails.style.display = 'none';
+            paypalDetails.style.display = 'block';
           }
-        }
+        });
       });
-    });
-    
-    const cbDetails = document.getElementById('cb_details');
-    if (cbDetails) {
-      cbDetails.style.display = 'block';
     }
   }
 }

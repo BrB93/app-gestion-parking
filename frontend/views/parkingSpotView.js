@@ -355,7 +355,7 @@ export function renderParkingSpotForm(spot = null, formData = null) {
           <select id="type" name="type" required>
             <option value="normale" ${isEditing && spot.type === 'normale' ? 'selected' : ''}>Standard</option>
             <option value="handicapee" ${isEditing && spot.type === 'handicapee' ? 'selected' : ''}>PMR</option>
-            <option value="electrique" ${isEditing && spot.type === 'electrique' ? 'selected' : ''}>Borne électrique</option>
+            <option value="electrique" ${isEditing && spot.type === 'electrique' ? 'selected' : ''}>Électrique</option>
             <option value="reservee" ${isEditing && spot.type === 'reservee' ? 'selected' : ''}>Réservée</option>
           </select>
         </div>
@@ -370,11 +370,9 @@ export function renderParkingSpotForm(spot = null, formData = null) {
         <div class="form-group">
           <label for="owner_id">Propriétaire:</label>
           <select id="owner_id" name="owner_id">
-            <option value="">-- Aucun propriétaire --</option>
+            <option value="">Aucun</option>
             ${owners.map(owner => `
-              <option value="${owner.id}" ${isEditing && spot.owner_id == owner.id ? 'selected' : ''}>
-                ${owner.username} (${owner.role})
-              </option>
+              <option value="${owner.id}" ${isEditing && spot.owner_id == owner.id ? 'selected' : ''}>${owner.username} (${owner.role})</option>
             `).join('')}
           </select>
         </div>
@@ -382,22 +380,9 @@ export function renderParkingSpotForm(spot = null, formData = null) {
           <label for="pricing_id">Tarification:</label>
           <select id="pricing_id" name="pricing_id">
             <option value="">Tarification par défaut</option>
-            ${pricings.map(pricing => {
-              let pricingName = '';
-              if (typeof pricing.getName === 'function') {
-                pricingName = pricing.getName();
-              } else if (pricing.name) {
-                pricingName = pricing.name;
-              } else {
-                pricingName = `${pricing.type_place} - ${pricing.day_of_week}`;
-              }
-              
-              return `
-                <option value="${pricing.id}" ${isEditing && spot.pricing_id == pricing.id ? 'selected' : ''}>
-                  ${pricingName}
-                </option>
-              `;
-            }).join('')}
+            ${pricings.map(pricing => `
+              <option value="${pricing.id}" ${isEditing && spot.pricing_id == pricing.id ? 'selected' : ''}>${pricing.name}</option>
+            `).join('')}
           </select>
         </div>
         <div class="form-actions">
@@ -486,23 +471,58 @@ function setupBasicPriceCalculation(pricing) {
 }
   
 function submitReservation(spotId) {
-  const form = document.getElementById('reservation-form');
+  const formContainer = document.getElementById('reservation-form');
+  const actualForm = formContainer ? formContainer.querySelector('form') : null;
+  const errorElement = document.getElementById('form-error');
   
-  if (!form || form.nodeName !== 'FORM') {
-    console.error('Formulaire de réservation non trouvé ou non valide');
-    
-    const formContainer = document.querySelector('.reservation-form-container');
-    if (formContainer) {
-      const formElement = formContainer.querySelector('form');
-      if (formElement) {
-        processReservationForm(formElement, spotId);
-        return;
-      }
-    }
+  if (!actualForm) {
+    console.error("Formulaire de réservation introuvable");
     return;
   }
   
-  processReservationForm(form, spotId);
+  actualForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (errorElement) errorElement.textContent = '';
+    
+    const formData = new FormData(actualForm);
+    const reservationData = {
+      spot_id: spotId,
+    };
+    
+    formData.forEach((value, key) => {
+      reservationData[key] = value;
+    });
+    
+    try {
+      const { createReservation } = await import("../controllers/reservationController.js");
+      const response = await createReservation(reservationData);
+      
+      if (response.error) {
+        if (errorElement) errorElement.textContent = response.error;
+        return;
+      }
+      
+      if (response.success) {
+        if (response.reservation_id) {
+          console.log("Affichage de la modale de paiement avec ID:", response.reservation_id, "et prix:", response.price);
+          
+          if (formContainer && formContainer.parentNode) {
+            formContainer.parentNode.removeChild(formContainer);
+          }
+          
+          import('../controllers/paymentController.js').then(module => {
+            module.showPaymentForm(response.reservation_id, response.price);
+          });
+        } else {
+          console.error("ID de réservation manquant dans la réponse");
+          window.location.href = '/app-gestion-parking/public/reservations';
+        }
+      }
+    } catch (error) {
+      console.error("Erreur lors de la création de la réservation:", error);
+      if (errorElement) errorElement.textContent = "Une erreur est survenue lors de la création de la réservation";
+    }
+  });
 }
 
 function processReservationForm(form, spotId) {

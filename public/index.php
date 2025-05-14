@@ -52,6 +52,12 @@ if (preg_match('#^/app-gestion-parking/public/api/users/(\d+)/delete$#', $uri, $
 }
 
 // authentification
+if ($uri === '/app-gestion-parking/public/api/register') {
+    $controller = new AuthController();
+    $controller->register();
+    exit;
+}
+
 if ($uri === '/app-gestion-parking/public/api/login') {
     $controller = new AuthController();
     $controller->login();
@@ -329,7 +335,7 @@ if ($uri === '/app-gestion-parking/public/parking') {
 }
 
 if ($uri === '/app-gestion-parking/public/login') {
-    require_once __DIR__ . '/login.php';
+    include __DIR__ . '/login.php';
     exit;
 }
 

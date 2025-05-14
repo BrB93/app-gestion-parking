@@ -79,50 +79,55 @@ class ReservationController {
 
     public function create() {
         Auth::requireAuthentication();
-    
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
-            echo json_encode(['error' => 'Méthode non autorisée']);
+            echo json_encode(['error' => 'Method Not Allowed']);
             return;
         }
-    
+
         $data = json_decode(file_get_contents('php://input'), true);
         $data = Validator::sanitizeData($data);
-    
+
         if (!isset($data['spot_id']) || !isset($data['start_time']) || !isset($data['end_time'])) {
             http_response_code(400);
-            echo json_encode(['error' => 'Données manquantes']);
+            echo json_encode(['error' => 'Données incomplètes']);
             return;
         }
-    
+
         $currentUser = Auth::getCurrentUser();
-    
+
         $spot = $this->spotRepo->getSpotById($data['spot_id']);
         if (!$spot || $spot->getStatus() === 'occupee') {
             http_response_code(400);
             echo json_encode(['error' => 'Place non disponible']);
             return;
         }
-    
+
         if ($this->reservationRepo->hasConflictingReservations($data['spot_id'], $data['start_time'], $data['end_time'])) {
-            http_response_code(409);
-            echo json_encode(['error' => 'Cette place est déjà réservée sur ce créneau horaire']);
+            http_response_code(400);
+            echo json_encode(['error' => 'Cette place est déjà réservée pour cette période']);
             return;
         }
-    
+
+        $pricingController = new PricingController();
+        $price = $pricingController->calculateTotalPrice($spot, $data['start_time'], $data['end_time']);
+
         $reservationId = $this->reservationRepo->createReservation(
             $currentUser->getId(),
             $data['spot_id'],
             $data['start_time'],
             $data['end_time']
         );
-    
+
         if ($reservationId) {
             $this->spotRepo->updateSpotStatus($data['spot_id'], 'reservee');
+            
             echo json_encode([
-                'success' => true, 
-                'message' => 'Réservation créée',
-                'reservation_id' => $reservationId
+                'success' => true,
+                'message' => 'Réservation créée avec succès',
+                'reservation_id' => $reservationId,
+                'price' => $price
             ]);
         } else {
             http_response_code(500);

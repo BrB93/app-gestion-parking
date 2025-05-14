@@ -2,6 +2,8 @@ import { fetchJSON, postJSON } from '../core/fetchWrapper.js';
 import { ParkingSpot } from '../models/ParkingSpot.js';
 import { renderParkingSpots } from '../views/parkingSpotView.js';
 import { renderParkingSpots as render2DParkingSpots } from '../views/parking2DView.js';
+import { validateFormData } from '../core/validator.js';
+
 
 export async function loadParkingSpots(useDynamicView = false) {
     try {
@@ -70,13 +72,13 @@ export async function loadAvailableSpots() {
 }
 
 export async function getFormData() {
-    try {
-        const data = await fetchJSON("/app-gestion-parking/public/api/parking-spots/form-data");
-        return data;
-    } catch (error) {
-        console.error("Erreur lors du chargement des données du formulaire:", error);
-        return { persons: [], pricings: [] };
-    }
+  try {
+    const data = await fetchJSON("/app-gestion-parking/public/api/parking-spots/form-data");
+    return data;
+  } catch (error) {
+    console.error("Erreur lors du chargement des données du formulaire:", error);
+    return { users: [], pricings: [] };
+  }
 }
 
 export async function createParkingSpot(spotData) {

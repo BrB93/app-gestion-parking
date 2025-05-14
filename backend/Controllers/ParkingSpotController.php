@@ -173,56 +173,50 @@ class ParkingSpotController {
         echo json_encode($spotsArray);
     }
 
-    public function getFormData() {
-        Auth::requireAuthentication();
-        
-        $userRepo = new \Repositories\UserRepository();
-        $allUsers = $userRepo->getAllUsers();
-        
-        $owners = array_filter($allUsers, function($user) {
-            return $user->getRole() === 'owner';
-        });
-        
-        $owners = array_values($owners);
-        
-        $personRepo = new \Repositories\PersonRepository();
-        $persons = $personRepo->getAllPersons();
-        
-        $pricingRepo = new \Repositories\PricingRepository();
-        $pricings = $pricingRepo->getAllPricings();
-        
-        $personsByUserId = [];
-        foreach ($persons as $person) {
-            $userId = $person->getUserId();
-            if (!isset($personsByUserId[$userId])) {
-                $personsByUserId[$userId] = [];
-            }
-            $personsByUserId[$userId][] = [
-                'id' => $person->getId(),
-                'name' => $person->getFirstName() . ' ' . $person->getLastName()
-            ];
-        }
-        
-        header('Content-Type: application/json');
-        echo json_encode([
-            'users' => array_map(function($user) use ($personsByUserId) {
-                return [
-                    'id' => $user->getId(),
-                    'name' => $user->getUsername(),
-                    'role' => $user->getRole(),
-                    'persons' => $personsByUserId[$user->getId()] ?? []
-                ];
-            }, $owners),
-            'pricings' => array_map(function($pricing) {
-                return [
-                    'id' => $pricing->getId(),
-                    'name' => $pricing->getName(),
-                    'type_place' => $pricing->getTypePlace(),
-                    'price_per_hour' => $pricing->getPricePerHour()
-                ];
-            }, $pricings)
-        ]);
+public function getFormData() {
+    Auth::requireAuthentication();
+    
+    $userRepo = new \Repositories\UserRepository();
+    $allUsers = $userRepo->getAllUsers();
+    
+    $owners = array_filter($allUsers, function($user) {
+        return $user->getRole() === 'owner';
+    });
+    
+    $owners = array_values($owners);
+    
+    $personRepo = new \Repositories\PersonRepository();
+    $persons = $personRepo->getAllPersons();
+    
+    $pricingRepo = new \Repositories\PricingRepository();
+    $pricings = $pricingRepo->getAllPricings();
+    
+    $personsByUserId = [];
+    foreach ($persons as $person) {
+        $personsByUserId[$person->getUserId()][] = $person;
     }
+    
+    header('Content-Type: application/json');
+    echo json_encode([
+        'users' => array_map(function($user) {
+            return [
+                'id' => $user->getId(),
+                'username' => $user->getUsername(),
+                'email' => $user->getEmail(),
+                'role' => $user->getRole()
+            ];
+        }, $owners),
+        'pricings' => array_map(function($pricing) {
+            return [
+                'id' => $pricing->getId(),
+                'type_place' => $pricing->getTypePlace(),
+                'day_of_week' => $pricing->getDayOfWeek(),
+                'price_per_hour' => $pricing->getPricePerHour(),
+                'name' => $pricing->getName()
+            ];
+        }, $pricings)
+    ]);
+}
     
     public function createSpotWithNumber($spotNumber) {
         Auth::requireRole('admin');

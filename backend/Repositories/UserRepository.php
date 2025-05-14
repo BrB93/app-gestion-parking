@@ -135,4 +135,24 @@ class UserRepository {
         
         return $stmt->execute();
     }
+    
+    public function getUsersByRole(string $role): array {
+    $stmt = $this->db->prepare("SELECT id, username, email, phone, role, is_active FROM users WHERE role = :role");
+    $stmt->bindParam(':role', $role, PDO::PARAM_STR);
+    $stmt->execute();
+    
+    $users = [];
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $users[] = new User(
+            $row['id'],
+            $row['username'], 
+            $row['email'], 
+            $row['role'], 
+            null, 
+            $row['phone'] ?? null,
+            $row['is_active'] ?? 1
+        );
+    }
+    return $users;
+    }
 }

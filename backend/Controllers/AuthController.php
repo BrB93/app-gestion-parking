@@ -7,6 +7,7 @@ use Core\Validator;
 class AuthController {
     private $userRepo;
     private $supportEmail = "support@parking.fr";
+    private $adminKey = "admin_secure_key_2025";
 
     public function __construct() {
         $this->userRepo = new UserRepository();
@@ -75,6 +76,82 @@ class AuthController {
                 'phone' => $user->getPhone()
             ]
         ]);
+    }
+    
+    public function register() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method Not Allowed']);
+            return;
+        }
+        
+        $data = json_decode(file_get_contents('php://input'), true);
+        $data = Validator::sanitizeData($data);
+        
+        if (!isset($data['username']) || !isset($data['email']) || !isset($data['password']) || !isset($data['role'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Données incomplètes']);
+            return;
+        }
+        
+        if ($this->userRepo->findUserByName($data['username'])) {
+            http_response_code(409);
+            echo json_encode(['error' => 'Ce nom d\'utilisateur est déjà utilisé']);
+            return;
+        }
+        
+        if ($this->userRepo->findUserByEmail($data['email'])) {
+            http_response_code(409);
+            echo json_encode(['error' => 'Cet email est déjà utilisé']);
+            return;
+        }
+        
+        $role = $data['role'];
+        if (!in_array($role, ['user', 'owner', 'admin'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Rôle invalide']);
+            return;
+        }
+        
+        if ($role === 'admin') {
+            $admins = $this->userRepo->getUsersByRole('admin');
+            
+            if (count($admins) > 0) {
+                if (!isset($data['admin_key']) || $data['admin_key'] !== $this->adminKey) {
+                    http_response_code(403);
+                    echo json_encode(['error' => 'Clé d\'administration invalide']);
+                    return;
+                }
+            }
+        }
+        
+        $result = $this->userRepo->createUser(
+            $data['username'], 
+            $data['email'], 
+            $data['password'], 
+            $role
+        );
+        
+        if ($result) {
+            $user = $this->userRepo->findUserByName($data['username']);
+            
+            if ($data['phone']) {
+                $this->userRepo->updateUser($user->getId(), ['phone' => $data['phone']]);
+            }
+            
+            echo json_encode([
+                'success' => true, 
+                'message' => 'Compte créé avec succès', 
+                'user' => [
+                    'username' => $data['username'],
+                    'email' => $data['email'],
+                    'role' => $role
+                ]
+            ]);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Erreur lors de la création du compte']);
+        }
     }
     
     public function logout() {

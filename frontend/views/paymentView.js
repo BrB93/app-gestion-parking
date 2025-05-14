@@ -213,59 +213,66 @@ function renderPaymentActions(payment) {
 
 export function renderPaymentForm(reservationId, amount) {
   return `
-    <div class="payment-form-container">
-      <h2>Effectuer un paiement</h2>
+    <div class="modal-content payment-form">
+      <h2>Finaliser votre paiement</h2>
+      
+      <div class="payment-details">
+        <p>Réservation #${reservationId}</p>
+        <p>Montant à payer: ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount)}</p>
+      </div>
+      
       <form id="payment-form">
         <input type="hidden" name="reservation_id" value="${reservationId}">
         <input type="hidden" name="amount" value="${amount}">
         
         <div class="form-group">
-          <p class="payment-amount">Montant à payer: ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount)}</p>
-        </div>
-        
-        <div class="form-group">
-          <label>Méthode de paiement:</label>
-          <div class="payment-method-options">
+          <h3>Choisissez un mode de paiement</h3>
+          <div class="payment-methods">
             <div class="payment-method-option">
-              <input type="radio" id="cb" name="payment_method" value="cb" checked>
-              <label for="cb">Carte bancaire</label>
+              <input type="radio" id="payment-cb" name="payment_method" value="cb" checked>
+              <label for="payment-cb">Carte bancaire</label>
             </div>
             <div class="payment-method-option">
-              <input type="radio" id="paypal" name="payment_method" value="paypal">
-              <label for="paypal">PayPal</label>
+              <input type="radio" id="payment-paypal" name="payment_method" value="paypal">
+              <label for="payment-paypal">PayPal</label>
             </div>
           </div>
         </div>
         
-        <div id="cb_details" class="payment-method-details">
+        <div id="cb-details" class="payment-method-details">
           <div class="form-group">
-            <label for="card_number">Numéro de carte:</label>
-            <input type="text" id="card_number" name="card_number" placeholder="1234 5678 9012 3456">
+            <label for="card_number">Numéro de carte</label>
+            <input type="text" id="card_number" name="card_number" placeholder="1234 5678 9012 3456" maxlength="19">
           </div>
-          <div class="form-group card-info-row">
-            <div>
-              <label for="card_expiry">Date d'expiration:</label>
-              <input type="text" id="card_expiry" name="card_expiry" placeholder="MM/AA">
+          
+          <div class="payment-card-info">
+            <div class="form-group">
+              <label for="expiry_date">Date d'expiration</label>
+              <input type="text" id="expiry_date" name="expiry_date" placeholder="MM/AA" maxlength="5">
             </div>
-            <div>
-              <label for="card_cvv">CVV:</label>
-              <input type="text" id="card_cvv" name="card_cvv" placeholder="123">
+            
+            <div class="form-group">
+              <label for="cvv">CVV</label>
+              <input type="text" id="cvv" name="cvv" placeholder="123" maxlength="3">
             </div>
           </div>
-        </div>
-        
-        <div id="paypal_details" class="payment-method-details" style="display: none;">
+          
           <div class="form-group">
-            <label for="paypal_email">Email PayPal:</label>
-            <input type="email" id="paypal_email" name="paypal_email" placeholder="exemple@email.com">
+            <label for="cardholder_name">Nom du titulaire</label>
+            <input type="text" id="cardholder_name" name="cardholder_name" placeholder="NOM Prénom">
           </div>
         </div>
         
-        <div class="form-group">
-          <button type="submit" class="btn-primary">Payer</button>
+        <div id="paypal-details" class="payment-method-details" style="display:none;">
+          <p>Vous allez être redirigé vers PayPal pour finaliser votre paiement.</p>
+        </div>
+        
+        <div id="payment-error" class="error-message"></div>
+        
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Confirmer le paiement</button>
           <button type="button" id="cancel-payment-form" class="btn-secondary">Annuler</button>
         </div>
-        <div id="form-error" class="error-message"></div>
       </form>
     </div>
   `;

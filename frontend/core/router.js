@@ -1,14 +1,25 @@
 export class Router {
     constructor(routes) {
       this.routes = routes;
+      this.fullPageRoutes = ['/app-gestion-parking/public/login'];
       this.contentElement = document.getElementById('app-content');
       
       window.addEventListener('popstate', () => this.handleRouteChange());
       
       document.addEventListener('click', (e) => {
-        if (e.target.tagName === 'A' && e.target.getAttribute('data-route') !== null) {
+        let target = e.target;
+        while (target && target.tagName !== 'A') {
+          target = target.parentElement;
+        }
+        
+        if (target && target.getAttribute('data-route') !== null) {
+          const route = target.getAttribute('data-route');
+          
+          if (this.fullPageRoutes.includes(route)) {
+            return;
+          }
+          
           e.preventDefault();
-          const route = e.target.getAttribute('data-route');
           this.navigateTo(route);
         }
       });
