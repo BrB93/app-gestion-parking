@@ -130,7 +130,12 @@ export async function processPayment(reservationId, amount, method, paymentData 
     const response = await postJSON("/app-gestion-parking/public/api/payments/process", data);
     
     if (response.success) {
-      await confirmPayment(response.payment_id);
+      return {
+        success: true,
+        payment_id: response.payment_id,
+        reservation_id: reservationId,
+        amount: amount
+      };
     }
     
     return response;
@@ -139,7 +144,6 @@ export async function processPayment(reservationId, amount, method, paymentData 
     return { error: error.message };
   }
 }
-
 export async function confirmPayment(id) {
   try {
     const response = await postJSON(`/app-gestion-parking/public/api/payments/${id}/confirm`, {});
@@ -211,8 +215,41 @@ export function setupPaymentEvents() {
   });
 }
 
+function showPaymentSuccess(result) {
+  console.log("Affichage du succès du paiement avec les données:", result);
+  
+  const modalContainer = document.createElement('div');
+  modalContainer.className = 'modal-container';
+  modalContainer.id = 'payment-success-modal';
+  
+  modalContainer.innerHTML = `
+    <div class="modal-content success-notification">
+      <h2>Paiement effectué avec succès</h2>
+      <div class="notification-content">
+        <p>Votre paiement de ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(result.amount || 0)} a été traité avec succès.</p>
+        <p>Numéro de transaction: ${result.payment_id || 'Non disponible'}</p>
+        <p>Numéro de réservation: ${result.reservation_id || 'Non disponible'}</p>
+      </div>
+      <button id="close-payment-success" class="btn-primary">Fermer</button>
+    </div>
+  `;
+  
+  document.body.appendChild(modalContainer);
+  
+  document.getElementById('close-payment-success').addEventListener('click', () => {
+    modalContainer.remove();
+    window.location.href = '/app-gestion-parking/public/reservations';
+  });
+}
+
 export function showPaymentForm(reservationId, amount) {
   console.log("showPaymentForm appelé avec:", reservationId, amount);
+  
+  const existingModal = document.getElementById('payment-modal');
+  if (existingModal) {
+    console.log("Un formulaire de paiement existe déjà, suppression...");
+    existingModal.remove();
+  }
   
   const modalContainer = document.createElement('div');
   modalContainer.className = 'modal-container';
@@ -231,113 +268,56 @@ export function showPaymentForm(reservationId, amount) {
         const formData = new FormData(form);
         const paymentMethod = formData.get('payment_method');
         
-        try {
-          const submitForm = document.createElement('form');
-          submitForm.method = 'POST';
-          submitForm.action = '/app-gestion-parking/public/payment-gateway.php';
-          submitForm.style.display = 'none';
-          
-          const reservationIdField = document.createElement('input');
-          reservationIdField.type = 'hidden';
-          reservationIdField.name = 'reservation_id';
-          reservationIdField.value = reservationId;
-          
-          const amountField = document.createElement('input');
-          amountField.type = 'hidden';
-          amountField.name = 'amount';
-          amountField.value = amount;
-          
-          const paymentMethodField = document.createElement('input');
-          paymentMethodField.type = 'hidden';
-          paymentMethodField.name = 'payment_method';
-          paymentMethodField.value = paymentMethod;
-          
-          if (paymentMethod === 'cb') {
-            const cardNumberField = document.createElement('input');
-            cardNumberField.type = 'hidden';
-            cardNumberField.name = 'card_number';
-            cardNumberField.value = formData.get('card_number');
-            
-            const expiryDateField = document.createElement('input');
-            expiryDateField.type = 'hidden';
-            expiryDateField.name = 'expiry_date';
-            expiryDateField.value = formData.get('expiry_date');
-            
-            const cvvField = document.createElement('input');
-            cvvField.type = 'hidden';
-            cvvField.name = 'cvv';
-            cvvField.value = formData.get('cvv');
-            
-            const cardholderField = document.createElement('input');
-            cardholderField.type = 'hidden';
-            cardholderField.name = 'cardholder_name';
-            cardholderField.value = formData.get('cardholder_name');
-            
-            submitForm.appendChild(cardNumberField);
-            submitForm.appendChild(expiryDateField);
-            submitForm.appendChild(cvvField);
-            submitForm.appendChild(cardholderField);
-          }
-          
-          submitForm.appendChild(reservationIdField);
-          submitForm.appendChild(amountField);
-          submitForm.appendChild(paymentMethodField);
-          document.body.appendChild(submitForm);
-          submitForm.submit();
-        } catch (error) {
-          console.error('Erreur lors du traitement du paiement:', error);
+        const result = await processPayment(reservationId, amount, paymentMethod, {
+          card_number: formData.get('card_number'),
+          card_expiry: formData.get('card_expiry'),
+          card_cvv: formData.get('card_cvv'),
+          card_holder: formData.get('card_holder')
+        });
+        
+        if (result.success) {
+          modalContainer.remove();
+          showPaymentSuccess(result);
+        } else {
           const errorElement = document.getElementById('payment-error');
-          if (errorElement) errorElement.textContent = "Une erreur est survenue lors du traitement du paiement";
+          if (errorElement) {
+            errorElement.textContent = result.error || "Une erreur est survenue";
+            errorElement.style.display = 'block';
+          }
         }
       });
     }
     
     if (cancelBtn) {
       cancelBtn.addEventListener('click', () => {
-        document.body.removeChild(modalContainer);
+        modalContainer.remove();
       });
     }
     
-    const paymentMethodInputs = document.querySelectorAll('input[name="payment_method"]');
-    const cbDetails = document.getElementById('cb-details');
-    const paypalDetails = document.getElementById('paypal-details');
-    
-    if (paymentMethodInputs.length && cbDetails && paypalDetails) {
-      paymentMethodInputs.forEach(input => {
-        input.addEventListener('change', () => {
-          if (input.value === 'cb') {
-            cbDetails.style.display = 'block';
-            paypalDetails.style.display = 'none';
-          } else {
-            cbDetails.style.display = 'none';
-            paypalDetails.style.display = 'block';
-          }
-        });
-      });
-    }
+    setupPaymentMethodToggle();
   });
 }
   
-  function setupPaymentMethodToggle() {
-    const paymentMethodInputs = document.querySelectorAll('input[name="payment_method"]');
-    const cbDetails = document.getElementById('cb-details');
-    const paypalDetails = document.getElementById('paypal-details');
-    
-    if (paymentMethodInputs.length && cbDetails && paypalDetails) {
-      paymentMethodInputs.forEach(input => {
-        input.addEventListener('change', () => {
-          if (input.value === 'cb') {
-            cbDetails.style.display = 'block';
-            paypalDetails.style.display = 'none';
-          } else {
-            cbDetails.style.display = 'none';
-            paypalDetails.style.display = 'block';
-          }
-        });
+function setupPaymentMethodToggle() {
+  const paymentMethodInputs = document.querySelectorAll('input[name="payment_method"]');
+  const cbDetails = document.getElementById('cb-details');
+  const paypalDetails = document.getElementById('paypal-details');
+  
+  if (paymentMethodInputs.length && cbDetails && paypalDetails) {
+    paymentMethodInputs.forEach(input => {
+      input.addEventListener('change', () => {
+        if (input.value === 'cb') {
+          cbDetails.style.display = 'block';
+          paypalDetails.style.display = 'none';
+        } else {
+          cbDetails.style.display = 'none';
+          paypalDetails.style.display = 'block';
+        }
       });
-    }
+    });
   }
 }
+
 
 export async function refreshPaymentStatuses() {
   try {

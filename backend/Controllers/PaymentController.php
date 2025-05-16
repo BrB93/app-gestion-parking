@@ -166,17 +166,15 @@ class PaymentController {
             $paymentId = $this->processPayPalPayment($reservationId, $amount, $data);
         }
         
-        if ($paymentId > 0) {
-            $this->paymentRepo->updatePaymentStatus($paymentId, 'effectue');
-            
-            $this->reservationRepo->updateStatus($reservationId, 'confirmee');
-            
-            echo json_encode([
-                'success' => true, 
-                'payment_id' => $paymentId, 
-                'message' => 'Paiement effectué avec succès'
-            ]);
-        } else {
+    if ($paymentId > 0) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Paiement traité avec succès',
+            'payment_id' => $paymentId,
+            'reservation_id' => $reservationId,
+            'amount' => $amount
+        ]);
+    } else {
             http_response_code(500);
             echo json_encode(['error' => 'Erreur lors du traitement du paiement']);
         }
