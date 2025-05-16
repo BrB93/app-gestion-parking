@@ -60,7 +60,7 @@ class PaymentRepository {
         return $payments;
     }
 
-    public function createPayment(int $reservationId, float $amount, string $method, string $status = 'en_attente'): int {
+    public function createPayment(int $reservationId, float $amount, string $method, string $status = 'effectue'): int {
         $stmt = $this->db->prepare("
             INSERT INTO payments (reservation_id, amount, method, status) 
             VALUES (:reservation_id, :amount, :method, :status)

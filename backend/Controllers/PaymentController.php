@@ -245,13 +245,13 @@ class PaymentController {
     
     private function processCreditCardPayment($reservationId, $amount, $data) {
         
-        $paymentId = $this->paymentRepo->createPayment($reservationId, $amount, 'cb');
+        $paymentId = $this->paymentRepo->createPayment($reservationId, $amount, 'cb', 'effectue');
         return $paymentId;
     }
     
     private function processPayPalPayment($reservationId, $amount, $data) {
         
-        $paymentId = $this->paymentRepo->createPayment($reservationId, $amount, 'paypal');
+        $paymentId = $this->paymentRepo->createPayment($reservationId, $amount, 'paypal', 'effectue');
         return $paymentId;
     }
 }
