@@ -148,19 +148,34 @@ class ReservationController {
 
         if ($reservation->getUserId() !== $currentUser->getId() && $currentUser->getRole() !== 'admin') {
             http_response_code(403);
-            echo json_encode(['error' => 'Accès interdit ou réservation non trouvée']);
+            echo json_encode(['error' => 'Vous n\'êtes pas autorisé à annuler cette réservation']);
             return;
         }
 
         $result = $this->reservationRepo->updateStatus($id, 'annulee');
 
         if ($result) {
-            $this->spotRepo->updateSpotStatus($reservation->getSpotId(), 'libre');
+            $paymentRepo = new \Repositories\PaymentRepository();
+            $payments = $paymentRepo->getPaymentsByReservationId($id);
+            
+            foreach ($payments as $payment) {
+                if ($payment->getStatus() === 'effectue') {
+                    $paymentRepo->updatePaymentStatus($payment->getId(), 'echoue');
+                    
+                    $notificationRepo = new \Repositories\NotificationRepository();
+                    $notificationRepo->createNotification(
+                        $reservation->getUserId(),
+                        'payment',
+                        'Remboursement effectué',
+                        "Votre paiement de {$payment->getAmount()}€ pour la réservation #{$id} a été remboursé suite à l'annulation."
+                    );
+                }
+            }
 
-            echo json_encode(['success' => true, 'message' => 'Réservation annulée']);
+            echo json_encode(['success' => true, 'message' => 'Réservation annulée et paiement(s) remboursé(s)']);
         } else {
             http_response_code(500);
-            echo json_encode(['error' => 'Erreur lors de l\'annulation']);
+            echo json_encode(['error' => 'Erreur lors de l\'annulation de la réservation']);
         }
     }
 

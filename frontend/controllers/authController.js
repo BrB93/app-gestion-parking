@@ -23,8 +23,12 @@ export async function login(username, password) {
     const data = await response.json();
     
     if (response.ok && data.success) {
+      console.log("Connexion réussie, stockage des informations utilisateur");
       localStorage.setItem("currentUser", JSON.stringify(data.user));
-      window.location.href = "/app-gestion-parking/public/";
+      
+      const redirectUrl = localStorage.getItem("redirect_after_login") || "/app-gestion-parking/public/";
+      localStorage.removeItem("redirect_after_login");
+      window.location.href = redirectUrl;
       return { success: true };
     }
     
@@ -244,24 +248,12 @@ export function initLoginForm() {
 
 export function checkProtectedRoute() {
   const user = getCurrentUser();
-  const currentPath = window.location.pathname;
   
-  const protectedRoutes = [
-    { path: "/app-gestion-parking/public/users", role: "admin" }
-  ];
-  
-  const requiredRoute = protectedRoutes.find(route => currentPath === route.path);
-  
-  if (requiredRoute) {
-    if (!user) {
-      window.location.href = "/app-gestion-parking/public/login";
-      return false;
-    }
-    
-    if (user.role !== "admin" && user.role !== requiredRoute.role) {
-      window.location.href = "/app-gestion-parking/public/";
-      return false;
-    }
+  if (!user) {
+    console.log("Utilisateur non connecté, redirection vers la page de login...");
+    localStorage.setItem("redirect_after_login", window.location.pathname);
+    window.location.href = "/app-gestion-parking/public/login";
+    return false;
   }
   
   return true;

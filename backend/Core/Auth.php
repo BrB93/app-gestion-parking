@@ -3,13 +3,13 @@ namespace Core;
 use Repositories\UserRepository;
 
 class Auth {
-    public static function isAuthenticated(): bool {
+public static function isAuthenticated(): bool {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
         
         return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']) && 
-               isset($_SESSION['user_role']) && !empty($_SESSION['user_role']);
+            isset($_SESSION['user_role']) && !empty($_SESSION['user_role']);
     }
     
     public static function getCurrentUser() {

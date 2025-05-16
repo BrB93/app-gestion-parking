@@ -22,15 +22,16 @@ export class Payment {
     isFailed() {
       return this.status === 'echoue';
     }
-  
-    getStatusLabel() {
-      switch (this.status) {
-        case 'en_attente': return 'En attente';
-        case 'effectue': return 'Effectué';
-        case 'echoue': return 'Échoué';
-        default: return this.status;
-      }
+    
+  getStatusLabel() {
+    switch (this.status) {
+      case 'en_attente': return 'En attente';
+      case 'effectue': return 'Effectué';
+      case 'echoue': 
+        return this.isFailed() ? 'Remboursé' : 'Échoué';
+      default: return this.status;
     }
+  }
   
     getMethodLabel() {
       switch (this.method) {

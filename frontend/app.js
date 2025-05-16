@@ -8,10 +8,17 @@ import { initLoginForm, checkAuthStatus, checkProtectedRoute, getCurrentUser } f
 import { renderUserForm } from './views/userView.js';
 import { renderPersonForm } from './views/personView.js';
 import { validateFormData } from './core/validator.js';
+import { initializeNotifications } from './controllers/notificationController.js';
+
 
 document.addEventListener("DOMContentLoaded", () => {
   renderNavbar();
   checkAuthStatus();
+
+  const currentUser = getCurrentUser();
+  if (currentUser) {
+    initializeNotifications();
+  }
 
   function setupUserFormSubmission(userId) {
     const form = document.getElementById('edit-user-form');
@@ -294,6 +301,42 @@ document.addEventListener("DOMContentLoaded", () => {
             } catch (error) {
               console.error("Erreur lors du chargement des réservations:", error);
               content.innerHTML += `<p class="error-message">Une erreur est survenue lors du chargement des réservations.</p>`;
+            }
+          }
+        }
+      }
+    },
+        {
+      path: '/app-gestion-parking/public/notifications',
+      controller: async () => {
+        if (checkProtectedRoute()) {
+          const content = document.getElementById('app-content');
+          if (content) {
+            content.innerHTML = '<h1>Mes Notifications</h1><div id="notifications-container" class="notifications-container"><div class="loading">Chargement des notifications...</div></div>';
+            
+            import('./controllers/notificationController.js').then(module => {
+              module.loadNotifications();
+            });
+            
+            const markAllReadBtn = document.getElementById('mark-all-notifications-read');
+            if (markAllReadBtn) {
+              markAllReadBtn.addEventListener('click', async () => {
+                import('./controllers/notificationController.js').then(module => {
+                  module.markAllAsRead();
+                });
+              });
+            }
+            
+            const deleteAllBtn = document.getElementById('delete-all-notifications');
+            if (deleteAllBtn) {
+              deleteAllBtn.addEventListener('click', async () => {
+                const confirm = window.confirm('Êtes-vous sûr de vouloir supprimer toutes vos notifications ?');
+                if (confirm) {
+                  import('./controllers/notificationController.js').then(module => {
+                    module.deleteAllNotifications();
+                  });
+                }
+              });
             }
           }
         }
