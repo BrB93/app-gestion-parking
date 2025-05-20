@@ -22,7 +22,7 @@ export async function postJSON(url, data) {
     headers: {
       'Content-Type': 'application/json',
     },
-    credentials: 'same-origin',
+    credentials: 'include', 
     body: JSON.stringify(data),
   });
   

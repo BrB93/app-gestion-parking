@@ -51,11 +51,11 @@ function renderPersonsInContainer(container, persons) {
     });
 }
 
-export async function renderPersonForm(person = null) {
+export async function renderPersonForm(person = null, userId = null) {
     const currentUser = getCurrentUser();
     
     const id = person?.id || '';
-    const userId = currentUser.id;
+    const defaultUserId = userId || (currentUser ? currentUser.id : '');
     const firstName = person?.first_name || '';
     const lastName = person?.last_name || '';
     const address = person?.address || '';
@@ -73,8 +73,8 @@ export async function renderPersonForm(person = null) {
       <form id="${id ? 'edit-person-form' : 'create-person-form'}" class="form">
         ${id ? `<input type="hidden" name="id" value="${id}">` : ''}
         
-        <!-- Champ caché pour user_id puisque nous sommes sur la page profil -->
-        <input type="hidden" name="user_id" value="${userId}">
+        <!-- Champ caché pour user_id -->
+        <input type="hidden" name="user_id" value="${defaultUserId}">
         
         <div class="form-group">
           <label for="first_name">Prénom :</label>

@@ -97,13 +97,12 @@ class PersonController {
             $result = $this->personRepo->createPerson($data);
             
             if ($result) {
-                header('Content-Type: application/json');
-                echo json_encode(['success' => true, 'person' => [
-                    'id' => $result,
-                    'user_id' => $data['user_id'],
-                    'first_name' => $data['first_name'],
-                    'last_name' => $data['last_name']
-                ]]);
+                // Correction de la syntaxe JSON
+                echo json_encode([
+                    'success' => true, 
+                    'message' => 'Personne créée avec succès',
+                    'person_id' => $result
+                ]);
             } else {
                 http_response_code(500);
                 echo json_encode(['error' => 'Erreur lors de la création de la personne']);

@@ -104,24 +104,36 @@ export async function getPerson(id) {
         return null;
     }
 }
-
 export async function createPerson(personData) {
     try {
         if (!personData.user_id) {
-            const currentUser = getCurrentUser();
-            if (currentUser) {
-                personData.user_id = currentUser.id;
-            }
+            return { error: "ID utilisateur manquant" };
         }
         
-        const response = await postJSON("/app-gestion-parking/public/api/persons/create", personData);
-        return response;
+        console.log("Tentative de création de personne avec les données:", personData);
+        
+        const response = await fetch("/app-gestion-parking/public/api/persons/create", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: 'include',
+            body: JSON.stringify(personData),
+        });
+        
+        if (response.status === 401) {
+            console.error("Erreur d'authentification lors de la création de personne");
+            return { error: "Vous devez être connecté pour créer un profil" };
+        }
+        
+        const result = await response.json();
+        console.log("Réponse de création de personne:", result);
+        return result;
     } catch (error) {
-        console.error("Error creating person:", error);
+        console.error("Erreur lors de la création de personne:", error);
         return { error: error.message };
     }
 }
-
 export async function updatePerson(id, personData) {
     try {
         const response = await postJSON(`/app-gestion-parking/public/api/persons/${id}/update`, personData);

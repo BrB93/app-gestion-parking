@@ -78,40 +78,40 @@ class AuthController {
         ]);
     }
     
-    public function register() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            http_response_code(405);
-            echo json_encode(['error' => 'Method Not Allowed']);
-            return;
-        }
-        
-        $data = json_decode(file_get_contents('php://input'), true);
-        $data = Validator::sanitizeData($data);
-        
-        if (!isset($data['username']) || !isset($data['email']) || !isset($data['password']) || !isset($data['role'])) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Données incomplètes']);
-            return;
-        }
-        
-        if ($this->userRepo->findUserByName($data['username'])) {
-            http_response_code(409);
-            echo json_encode(['error' => 'Ce nom d\'utilisateur est déjà utilisé']);
-            return;
-        }
-        
-        if ($this->userRepo->findUserByEmail($data['email'])) {
-            http_response_code(409);
-            echo json_encode(['error' => 'Cet email est déjà utilisé']);
-            return;
-        }
-        
-        $role = $data['role'];
-        if (!in_array($role, ['user', 'owner', 'admin'])) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Rôle invalide']);
-            return;
-        }
+public function register() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        echo json_encode(['error' => 'Method Not Allowed']);
+        return;
+    }
+    
+    $data = json_decode(file_get_contents('php://input'), true);
+    $data = Validator::sanitizeData($data);
+    
+    if (!isset($data['username']) || !isset($data['email']) || !isset($data['password']) || !isset($data['role'])) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Données incomplètes']);
+        return;
+    }
+    
+    if ($this->userRepo->findUserByName($data['username'])) {
+        http_response_code(409);
+        echo json_encode(['error' => 'Ce nom d\'utilisateur est déjà utilisé']);
+        return;
+    }
+    
+    if ($this->userRepo->findUserByEmail($data['email'])) {
+        http_response_code(409);
+        echo json_encode(['error' => 'Cet email est déjà utilisé']);
+        return;
+    }
+    
+    $role = $data['role'];
+    if (!in_array($role, ['user', 'owner', 'admin'])) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Rôle invalide']);
+        return;
+    }
         
         if ($role === 'admin') {
             $admins = $this->userRepo->getUsersByRole('admin');
@@ -125,34 +125,45 @@ class AuthController {
             }
         }
         
-        $result = $this->userRepo->createUser(
-            $data['username'], 
-            $data['email'], 
-            $data['password'], 
-            $role
-        );
+    $result = $this->userRepo->createUser(
+        $data['username'], 
+        $data['email'], 
+        $data['password'], 
+        $role
+    );
+    
+    if ($result) {
+        $user = $this->userRepo->findUserByName($data['username']);
         
-        if ($result) {
-            $user = $this->userRepo->findUserByName($data['username']);
-            
-            if ($data['phone']) {
-                $this->userRepo->updateUser($user->getId(), ['phone' => $data['phone']]);
-            }
-            
-            echo json_encode([
-                'success' => true, 
-                'message' => 'Compte créé avec succès', 
-                'user' => [
-                    'username' => $data['username'],
-                    'email' => $data['email'],
-                    'role' => $role
-                ]
-            ]);
-        } else {
-            http_response_code(500);
-            echo json_encode(['error' => 'Erreur lors de la création du compte']);
+        if ($data['phone']) {
+            $userData = ['phone' => $data['phone']];
+            $this->userRepo->updateUser($user->getId(), $userData);
         }
+        
+        session_start();
+        $_SESSION['user_id'] = $user->getId();
+        $_SESSION['user_name'] = $user->getName();
+        $_SESSION['user_email'] = $user->getEmail();
+        $_SESSION['user_role'] = $user->getRole();
+        $_SESSION['user_phone'] = $user->getPhone();
+        
+        echo json_encode([
+            'success' => true, 
+            'message' => 'Compte créé avec succès', 
+            'user_id' => $user->getId(),
+            'user' => [
+                'id' => $user->getId(),
+                'username' => $user->getName(),
+                'email' => $user->getEmail(),
+                'role' => $user->getRole(),
+                'phone' => $user->getPhone()
+            ]
+        ]);
+    } else {
+        http_response_code(500);
+        echo json_encode(['error' => 'Erreur lors de la création du compte']);
     }
+}
     
     public function logout() {
         session_start();
