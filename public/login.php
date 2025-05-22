@@ -40,6 +40,13 @@ require_once __DIR__ . '/../backend/Kernel.php';
         <h1>Inscription</h1>
         <form id="register-form">
           <div class="form-group">
+            <label for="reg-role">Type de compte:</label>
+            <select id="reg-role" name="role" required>
+              <option value="user">Utilisateur</option>
+              <option value="owner">Propriétaire</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label for="reg-username">Nom d'utilisateur:</label>
             <input type="text" id="reg-username" name="username" required>
           </div>
@@ -58,13 +65,6 @@ require_once __DIR__ . '/../backend/Kernel.php';
           <div class="form-group">
             <label for="reg-phone">Téléphone (optionnel):</label>
             <input type="tel" id="reg-phone" name="phone">
-          </div>
-          <div class="form-group">
-            <label for="reg-role">Type de compte:</label>
-            <select id="reg-role" name="role" required>
-              <option value="user">Utilisateur</option>
-              <option value="owner">Propriétaire</option>
-            </select>
           </div>
           <div class="form-group admin-key-container" style="display: none;">
             <label for="reg-admin-key">Clé d'administration:</label>
