@@ -129,8 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
     {
       path: '/app-gestion-parking/public/',
       controller: () => {
-        const content = document.getElementById('app-content');
-        content.innerHTML = '<h1>Bienvenue sur l\'application de gestion de parking</h1>';
+        console.log("Page d'accueil chargée");
       }
     },
     {

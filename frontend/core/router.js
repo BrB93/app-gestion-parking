@@ -32,6 +32,10 @@ export class Router {
     handleRouteChange() {
       const path = window.location.pathname;
       let matchedRoute = this.routes.find(route => route.path === path);
+
+        if (path === '/app-gestion-parking/public/' || path === '/app-gestion-parking/public/index.php') {
+      return;
+      } 
       
       if (!matchedRoute) {
         matchedRoute = this.routes.find(route => route.path === '/app-gestion-parking/public/');
