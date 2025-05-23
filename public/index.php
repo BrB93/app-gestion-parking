@@ -236,49 +236,50 @@ if (preg_match('#^/app-gestion-parking/public/api/reservations/(\d+)/update$#', 
 
 // notifications
 if (preg_match('#^/app-gestion-parking/public/api/notifications$#', $uri)) {
-    $controller = new NotificationController();
+    $controller = new Controllers\NotificationController();
     $controller->index();
     exit;
 }
 
 if (preg_match('#^/app-gestion-parking/public/api/notifications/(\d+)$#', $uri, $matches)) {
-    $controller = new NotificationController();
+    $controller = new Controllers\NotificationController();
     $controller->show($matches[1]);
     exit;
 }
 
 if (preg_match('#^/app-gestion-parking/public/api/notifications/(\d+)/read$#', $uri, $matches)) {
-    $controller = new NotificationController();
+    $controller = new Controllers\NotificationController();
     $controller->markAsRead($matches[1]);
     exit;
 }
 
 if ($uri === '/app-gestion-parking/public/api/notifications/mark-all-read') {
-    $controller = new NotificationController();
+    $controller = new Controllers\NotificationController();
     $controller->markAllAsRead();
     exit;
 }
 
 if ($uri === '/app-gestion-parking/public/api/notifications/unread-count') {
-    $controller = new NotificationController();
-    $controller->countUnread();
+    $controller = new Controllers\NotificationController();
+    $controller->getUnreadCount();
     exit;
 }
 
 if (preg_match('#^/app-gestion-parking/public/api/notifications/(\d+)/delete$#', $uri, $matches)) {
-    $controller = new NotificationController();
+    $controller = new Controllers\NotificationController();
     $controller->delete($matches[1]);
     exit;
 }
 
-if ($uri === '/app-gestion-parking/public/api/notifications/create') {
-    $controller = new NotificationController();
-    $controller->create();
+if ($uri === '/app-gestion-parking/public/api/notifications/delete-all') {
+    $controller = new Controllers\NotificationController();
+    $controller->deleteAll();
     exit;
 }
 
-if ($uri === '/app-gestion-parking/public/notifications') {
-    require __DIR__ . '/notifications.php';
+if ($uri === '/app-gestion-parking/public/api/notifications/create') {
+    $controller = new Controllers\NotificationController();
+    $controller->create();
     exit;
 }
 
@@ -519,6 +520,10 @@ if ($uri === '/app-gestion-parking/public/login') {
 
 if ($uri === '/app-gestion-parking/public/profile') {
     require_once __DIR__ . '/profile.php';
+    exit;
+}
+if ($uri === '/app-gestion-parking/public/notifications') {
+    require __DIR__ . '/notifications.php';
     exit;
 }
 

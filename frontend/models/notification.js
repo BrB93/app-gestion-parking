@@ -6,50 +6,57 @@ export class Notification {
         this.content = content;
         this.is_read = isRead;
         this.timestamp = timestamp ? new Date(timestamp) : new Date();
+        this.time_ago = '';
+        this.type_label = '';
     }
-    
-    isUnread() {
-        return !this.is_read;
+
+    isAlert() {
+        return this.type === 'alerte';
     }
-    
+
+    isReminder() {
+        return this.type === 'rappel';
+    }
+
+    isRead() {
+        return this.is_read;
+    }
+
     getTypeLabel() {
-        switch (this.type) {
-            case 'rappel': return 'Rappel';
-            case 'alerte': return 'Alerte';
-            default: return this.type;
-        }
+        return this.isAlert() ? 'Alerte' : 'Rappel';
     }
-    
+
     getTypeClass() {
-        switch (this.type) {
-            case 'rappel': return 'notification-reminder';
-            case 'alerte': return 'notification-alert';
-            default: return '';
-        }
+        return this.isAlert() ? 'notification-alert' : 'notification-reminder';
     }
-    
-    getFormattedDate() {
+
+    getFormattedTimestamp() {
         return this.timestamp.toLocaleString('fr-FR');
     }
-    
+
     getTimeAgo() {
-        const now = new Date();
-        const diffMs = now - this.timestamp;
-        const diffSec = Math.round(diffMs / 1000);
-        const diffMin = Math.round(diffSec / 60);
-        const diffHour = Math.round(diffMin / 60);
-        const diffDay = Math.round(diffHour / 24);
+        if (this.time_ago) return this.time_ago;
         
-        if (diffSec < 60) {
+        const now = new Date();
+        const diff = Math.floor((now - this.timestamp) / 1000);
+        
+        if (diff < 60) {
             return 'à l\'instant';
-        } else if (diffMin < 60) {
-            return `Il y a ${diffMin} minute${diffMin > 1 ? 's' : ''}`;
-        } else if (diffHour < 24) {
-            return `Il y a ${diffHour} heure${diffHour > 1 ? 's' : ''}`;
-        } else if (diffDay < 30) {
-            return `Il y a ${diffDay} jour${diffDay > 1 ? 's' : ''}`;
+        } else if (diff < 3600) {
+            const minutes = Math.floor(diff / 60);
+            return `il y a ${minutes} minute${minutes > 1 ? 's' : ''}`;
+        } else if (diff < 86400) {
+            const hours = Math.floor(diff / 3600);
+            return `il y a ${hours} heure${hours > 1 ? 's' : ''}`;
+        } else if (diff < 2592000) {
+            const days = Math.floor(diff / 86400);
+            return `il y a ${days} jour${days > 1 ? 's' : ''}`;
+        } else if (diff < 31536000) {
+            const months = Math.floor(diff / 2592000);
+            return `il y a ${months} mois`;
         } else {
-            return this.getFormattedDate();
+            const years = Math.floor(diff / 31536000);
+            return `il y a ${years} an${years > 1 ? 's' : ''}`;
         }
     }
 }

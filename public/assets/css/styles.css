@@ -1349,7 +1349,123 @@ body {
   color: #777;
 }
 
+.notification-badge {
+    background-color: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: -8px;
+    right: -8px;
+}
 
+.notification-page-actions {
+    margin: 20px 0;
+    display: flex;
+    gap: 10px;
+}
+
+.notifications-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.notification-item {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    padding: 15px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: background-color 0.2s;
+}
+
+.notification-item:hover {
+    background-color: #f1f2f3;
+}
+
+.notification-item.unread {
+    background-color: #e8f4fd;
+    border-left: 4px solid #3498db;
+}
+
+.notification-item.unread:hover {
+    background-color: #d9edfc;
+}
+
+.notification-item.notification-alert {
+    border-left: 4px solid #e67e22;
+}
+
+.notification-item.notification-reminder {
+    border-left: 4px solid #2ecc71;
+}
+
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.notification-type {
+    font-weight: bold;
+    color: #444;
+}
+
+.notification-time {
+    color: #777;
+    font-size: 0.9em;
+}
+
+.notification-body {
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.notification-item .notification-actions {
+    display: flex;
+    gap: 10px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.notification-item:hover .notification-actions {
+    opacity: 1;
+}
+
+.mark-read-btn,
+.delete-notification-btn {
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.8em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mark-read-btn:hover {
+    background-color: #f8f9fa;
+    border-color: #3498db;
+    color: #3498db;
+}
+
+.delete-notification-btn:hover {
+    background-color: #f8f9fa;
+    border-color: #e74c3c;
+    color: #e74c3c;
+}
+
+.notification-empty {
+    text-align: center;
+    padding: 30px;
+    color: #777;
+}
 
 /* Style responsive */
 @media (max-width: 768px) {

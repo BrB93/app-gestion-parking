@@ -17,25 +17,49 @@ class Notification {
     public function getContent(): string { return $this->content; }
     public function isRead(): bool { return $this->is_read; }
     public function getTimestamp(): ?string { return $this->timestamp; }
-    
-    public function markAsRead(): void { $this->is_read = true; }
-    
-    public function getTypeLabel(): string {
-        switch ($this->type) {
-            case 'rappel': return 'Rappel';
-            case 'alerte': return 'Alerte';
-            default: return $this->type;
-        }
+
+    public function setIsRead(bool $is_read): void {
+        $this->is_read = $is_read;
+    }
+
+    public function isAlert(): bool {
+        return $this->type === 'alerte';
+    }
+
+    public function isReminder(): bool {
+        return $this->type === 'rappel';
     }
     
-    public function toArray(): array {
-        return [
-            'id' => $this->id,
-            'user_id' => $this->user_id,
-            'type' => $this->type,
-            'content' => $this->content,
-            'is_read' => $this->is_read,
-            'timestamp' => $this->timestamp
-        ];
+    public function getTypeLabel(): string {
+        return $this->isAlert() ? 'Alerte' : 'Rappel';
+    }
+    
+    public function getFormattedTimestamp(): string {
+        if (!$this->timestamp) return '';
+        
+        $date = new \DateTime($this->timestamp);
+        return $date->format('d/m/Y H:i');
+    }
+    
+    public function getTimeAgo(): string {
+        if (!$this->timestamp) return '';
+        
+        $date = new \DateTime($this->timestamp);
+        $now = new \DateTime();
+        $diff = $now->diff($date);
+        
+        if ($diff->y > 0) {
+            return $diff->y . ' an' . ($diff->y > 1 ? 's' : '');
+        } elseif ($diff->m > 0) {
+            return $diff->m . ' mois';
+        } elseif ($diff->d > 0) {
+            return $diff->d . ' jour' . ($diff->d > 1 ? 's' : '');
+        } elseif ($diff->h > 0) {
+            return $diff->h . ' heure' . ($diff->h > 1 ? 's' : '');
+        } elseif ($diff->i > 0) {
+            return $diff->i . ' minute' . ($diff->i > 1 ? 's' : '');
+        } else {
+            return 'à l\'instant';
+        }
     }
 }

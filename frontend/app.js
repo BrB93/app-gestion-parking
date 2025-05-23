@@ -9,11 +9,13 @@ import { renderUserForm } from './views/userView.js';
 import { renderPersonForm } from './views/personView.js';
 import { validateFormData } from './core/validator.js';
 import { initializeNotifications } from './controllers/notificationController.js';
+import { addNotificationBadge } from './views/notificationView.js';
 
 
 document.addEventListener("DOMContentLoaded", () => {
   renderNavbar();
   checkAuthStatus();
+  addNotificationBadge();
 
   const currentUser = getCurrentUser();
   if (currentUser) {
