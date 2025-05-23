@@ -130,8 +130,79 @@ document.addEventListener("DOMContentLoaded", () => {
   const routes = [
     {
       path: '/app-gestion-parking/public/',
-      controller: () => {
+      controller: async () => {
         console.log("Page d'accueil chargée");
+        
+        const currentUser = getCurrentUser();
+        if (!currentUser) {
+          const content = document.getElementById('app-content');
+          if (content) {
+            content.innerHTML = `
+              <div class="landing-page">
+                <div class="hero-section">
+                  <h1>SmartPark</h1>
+                  <p>La solution moderne pour la gestion de votre parking. Réservez, payez et gérez vos places de stationnement en toute simplicité.</p>
+                  <div class="cta-buttons">
+                    <a href="/app-gestion-parking/public/login" class="btn-primary">Connexion / Inscription</a>
+                  </div>
+                </div>
+                
+                <div class="features-section">
+                  <div class="feature-card">
+                    <div class="feature-icon">🚗</div>
+                    <h3>Réservation Facile</h3>
+                    <p>Trouvez et réservez une place de parking en quelques clics, de n'importe où et à tout moment.</p>
+                  </div>
+                  
+                  <!-- Autres feature-cards... -->
+                </div>
+                
+                <div class="cta-section">
+                  <h2>Prêt à simplifier votre stationnement ?</h2>
+                  <a href="/app-gestion-parking/public/login" class="btn-primary">Commencer maintenant</a>
+                </div>
+                
+                <footer>
+                  <p>© 2025 SmartPark - Application de gestion de parking</p>
+                </footer>
+              </div>
+            `;
+          }
+          return;
+        }
+        
+        try {
+          const content = document.getElementById('app-content');
+          if (content) {
+            content.innerHTML = '<div class="loading">Chargement des données...</div>';
+            
+            const { renderDashboard } = await import('./views/dashboardView.js');
+            
+            const response = await fetch('/app-gestion-parking/public/api/dashboard/stats', {
+              credentials: 'include'
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Erreur HTTP: ${response.status}`);
+            }
+            
+            const stats = await response.json();
+            
+            content.innerHTML = renderDashboard(stats, currentUser.role);
+          }
+        } catch (error) {
+          console.error('Erreur lors du chargement des statistiques:', error);
+          const content = document.getElementById('app-content');
+          if (content) {
+            content.innerHTML = `
+              <div class="error-container">
+                <h2>Erreur de chargement</h2>
+                <p>Impossible de charger les statistiques: ${error.message}</p>
+                <button class="btn-primary" onclick="location.reload()">Réessayer</button>
+              </div>
+            `;
+          }
+        }
       }
     },
     {

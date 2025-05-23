@@ -20,6 +20,97 @@ if (isset($_GET['reset_session'])) {
     exit;
 }
 
+// tableau de bord
+if ($uri === '/app-gestion-parking/public/api/dashboard/stats') {
+    $auth = new Core\Auth();
+    if (!$auth::isAuthenticated()) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Authentification requise']);
+        exit;
+    }
+    
+    $currentUser = $auth::getCurrentUser();
+    $userRepo = new Repositories\UserRepository();
+    $reservationRepo = new Repositories\ReservationRepository();
+    $spotRepo = new Repositories\ParkingSpotRepository();
+    $paymentRepo = new Repositories\PaymentRepository();
+    
+    $stats = [];
+    
+    if ($currentUser->getRole() === 'admin') {
+        $users = $userRepo->getAllUsers();
+        $spots = $spotRepo->getAllSpots();
+        $reservations = $reservationRepo->getAllReservations();
+        $totalAmount = $paymentRepo->getTotalCompletedPaymentAmount();
+        
+        $stats = [
+            'total_users' => count($users),
+            'total_spots' => count($spots),
+            'total_reservations' => count($reservations),
+            'available_spots' => count($spotRepo->getAvailableSpots()),
+            'total_amount' => $totalAmount,
+            'users_by_role' => [
+                'admin' => count(array_filter($users, function($u) { return $u->getRole() === 'admin'; })),
+                'owner' => count(array_filter($users, function($u) { return $u->getRole() === 'owner'; })),
+                'user' => count(array_filter($users, function($u) { return $u->getRole() === 'user'; })),
+            ]
+        ];
+    } elseif ($currentUser->getRole() === 'owner') {
+        $ownedSpots = $spotRepo->getSpotsByOwnerId($currentUser->getId());
+        $reservations = $reservationRepo->getReservationsByOwnerId($currentUser->getId());
+        $userReservations = $reservationRepo->getReservationsByUserId($currentUser->getId());
+        
+        $revenue = 0;
+        foreach ($reservations as $reservation) {
+            $payments = $paymentRepo->getPaymentsByReservationId($reservation->getId());
+            foreach ($payments as $payment) {
+                if ($payment->isCompleted()) {
+                    $revenue += $payment->getAmount();
+                }
+            }
+        }
+        
+        $stats = [
+            'owned_spots' => count($ownedSpots),
+            'total_reservations_on_my_spots' => count($reservations),
+            'active_reservations_on_my_spots' => count(array_filter($reservations, function($r) { 
+                return !$r->isCancelled() && !$r->isFinished(); 
+            })),
+            'my_reservations' => count($userReservations),
+            'total_revenue' => $revenue,
+            'occupation_rate' => count($ownedSpots) > 0 ? 
+                count(array_filter($ownedSpots, function($s) { return !$s->isAvailable(); })) / count($ownedSpots) * 100 : 0
+        ];
+    } else {
+        $userReservations = $reservationRepo->getReservationsByUserId($currentUser->getId());
+        $totalSpent = 0;
+        foreach ($userReservations as $reservation) {
+            $payments = $paymentRepo->getPaymentsByReservationId($reservation->getId());
+            foreach ($payments as $payment) {
+                if ($payment->isCompleted()) {
+                    $totalSpent += $payment->getAmount();
+                }
+            }
+        }
+        
+        $stats = [
+            'total_reservations' => count($userReservations),
+            'active_reservations' => count(array_filter($userReservations, function($r) { 
+                return !$r->isCancelled() && !$r->isFinished(); 
+            })),
+            'total_spent' => $totalSpent,
+            'favorite_spot_type' => 'normale', // Valeur par défaut
+            'upcoming_reservations' => count(array_filter($userReservations, function($r) { 
+                return !$r->isCancelled() && new DateTime($r->getStartTime()) > new DateTime(); 
+            }))
+        ];
+    }
+    
+    header('Content-Type: application/json');
+    echo json_encode($stats);
+    exit;
+}
+
 // utilisateurs
 if (preg_match('#^/app-gestion-parking/public/api/users$#', $uri)) {
     $controller = new UserController();
