@@ -75,6 +75,12 @@ class NotificationRepository {
             throw new \InvalidArgumentException("Type de notification invalide: $type");
         }
         
+        if ($this->isJson($content)) {
+            $contentObj = json_decode($content, true);
+            $formattedContent = $this->formatNotificationContent($contentObj);
+            $content = $formattedContent;
+        }
+        
         $stmt = $this->db->prepare("
             INSERT INTO notifications (user_id, type, content, is_read)
             VALUES (:user_id, :type, :content, 0)
@@ -90,6 +96,100 @@ class NotificationRepository {
         
         return 0;
     }
+
+    private function isJson($string) {
+    json_decode($string);
+    return (json_last_error() == JSON_ERROR_NONE);
+}
+
+    private function formatNotificationContent($contentObj) {
+        if (!isset($contentObj['action'])) {
+            return json_encode($contentObj);
+        }
+        
+        $action = $contentObj['action'];
+        $entityType = $contentObj['entity_type'] ?? 'élément';
+        $entityId = $contentObj['entity_id'] ?? '';
+        
+        $entityLabels = [
+            'user' => 'utilisateur',
+            'person' => 'personne',
+            'parking_spot' => 'place de parking',
+            'reservation' => 'réservation',
+            'payment' => 'paiement'
+        ];
+        
+        $entityLabel = $entityLabels[$entityType] ?? $entityType;
+        
+        $entityName = '';
+        if (isset($contentObj['details']['person_name'])) {
+            $entityName = $contentObj['details']['person_name'];
+        }
+        
+        switch ($action) {
+            case 'update':
+                $fieldsText = '';
+                if (isset($contentObj['details']['fields']) && is_array($contentObj['details']['fields'])) {
+                    $humanFields = $this->convertFieldsToHumanReadable($contentObj['details']['fields'], $entityType);
+                    $fieldsText = " (champs modifiés : " . implode(', ', $humanFields) . ")";
+                }
+                
+                return $entityName 
+                    ? "Mise à jour des informations de $entityLabel : $entityName$fieldsText" 
+                    : "Mise à jour d'un $entityLabel #$entityId$fieldsText";
+            
+            case 'create':
+                return $entityName 
+                    ? "Création d'un nouveau $entityLabel : $entityName" 
+                    : "Nouveau $entityLabel créé";
+                
+            case 'delete':
+                return $entityName 
+                    ? "Suppression du $entityLabel : $entityName" 
+                    : "Un $entityLabel a été supprimé";
+                
+            default:
+                return "Activité sur $entityLabel" . ($entityName ? " : $entityName" : " #$entityId");
+        }
+    }
+
+    private function convertFieldsToHumanReadable($fields, $entityType) {
+        $fieldLabels = [
+            'username' => 'nom d\'utilisateur',
+            'email' => 'adresse email',
+            'password' => 'mot de passe',
+            'phone' => 'téléphone',
+            'first_name' => 'prénom',
+            'last_name' => 'nom',
+            'address' => 'adresse',
+            'zip_code' => 'code postal',
+            'city' => 'ville',
+            'apartment_number' => 'numéro d\'appartement',
+            'phone_number' => 'numéro de téléphone',
+            'vehicle_brand' => 'marque du véhicule',
+            'vehicle_model' => 'modèle du véhicule',
+            'license_plate' => 'plaque d\'immatriculation',
+            'spot_number' => 'numéro de place',
+            'type' => 'type',
+            'status' => 'statut',
+            'start_time' => 'heure de début',
+            'end_time' => 'heure de fin',
+            'amount' => 'montant',
+            'method' => 'méthode de paiement'
+        ];
+        
+        $result = [];
+        foreach ($fields as $field) {
+            $result[] = $fieldLabels[$field] ?? $field;
+        }
+        
+        if (count($result) > 3) {
+            return array_slice($result, 0, 3) + ["et " . (count($result) - 3) . " autres"];
+        }
+        
+        return $result;
+    }
+
     
     public function markAsRead(int $id): bool {
         $stmt = $this->db->prepare("UPDATE notifications SET is_read = 1 WHERE id = :id");

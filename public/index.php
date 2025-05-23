@@ -312,11 +312,6 @@ if ($uri === '/app-gestion-parking/public/api/notifications/unread-count') {
     exit;
 }
 
-if (preg_match('#^/app-gestion-parking/public/api/notifications/(\d+)/delete$#', $uri, $matches)) {
-    $controller = new Controllers\NotificationController();
-    $controller->delete($matches[1]);
-    exit;
-}
 
 if ($uri === '/app-gestion-parking/public/api/notifications/delete-all') {
     $controller = new Controllers\NotificationController();
@@ -329,6 +324,19 @@ if ($uri === '/app-gestion-parking/public/api/notifications/create') {
     $controller->create();
     exit;
 }
+
+if (preg_match('#^/app-gestion-parking/public/api/notifications/(\d+)/delete$#', $uri, $matches)) {
+    $controller = new Controllers\NotificationController();
+    $controller->delete($matches[1]);
+    exit;
+}
+
+if ($uri === '/app-gestion-parking/public/api/notifications/delete-all') {
+    $controller = new Controllers\NotificationController();
+    $controller->deleteAll();
+    exit;
+}
+
 
 // paiements
 if ($uri === '/app-gestion-parking/public/api/payments') {

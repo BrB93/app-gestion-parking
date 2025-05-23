@@ -43,21 +43,29 @@ export function renderNotifications(notifications) {
             notificationElement.querySelector('.mark-read-btn').addEventListener('click', async () => {
                 await markAsRead(notification.id);
                 notificationElement.classList.remove('unread');
-                notificationElement.querySelector('.notification-actions').removeChild(
-                    notificationElement.querySelector('.mark-read-btn')
-                );
+                const markReadBtn = notificationElement.querySelector('.mark-read-btn');
+                if (markReadBtn && markReadBtn.parentNode) {
+                    markReadBtn.parentNode.removeChild(markReadBtn);
+                }
             });
         }
         
         notificationElement.querySelector('.delete-notification-btn').addEventListener('click', async () => {
-            await deleteNotification(notification.id);
-            container.removeChild(notificationElement);
-            if (container.children.length === 0) {
-                container.innerHTML = `
-                    <div class="notification-empty">
-                        <p>Vous n'avez pas de notifications</p>
-                    </div>
-                `;
+            try {
+                await deleteNotification(notification.id);
+                if (notificationElement.parentNode) {
+                    notificationElement.parentNode.removeChild(notificationElement);
+                    
+                    if (container.children.length === 0) {
+                        container.innerHTML = `
+                            <div class="notification-empty">
+                                <p>Vous n'avez pas de notifications</p>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error(`Erreur lors de la suppression: ${error.message}`);
             }
         });
     });
