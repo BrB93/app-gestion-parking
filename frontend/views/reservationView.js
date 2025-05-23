@@ -2,18 +2,29 @@ import { getCurrentUser } from "../controllers/authController.js";
 
 /**
  * Affiche la liste des réservations
- * @param {Reservation[]} reservations 
+ * @param {Reservation[]} myReservations - Réservations de l'utilisateur courant
+ * @param {Reservation[]} spotReservations - Réservations des places dont l'utilisateur est propriétaire
  */
 export function renderReservations(myReservations, spotReservations = []) {
   const container = document.getElementById("reservation-list");
-  if (!container) return;
+  if (!container) {
+    console.error("Élément 'reservation-list' introuvable");
+    return;
+  }
 
   container.innerHTML = "";
+  
   const currentUser = getCurrentUser();
   const isOwner = currentUser && currentUser.role === 'owner';
+  const isAdmin = currentUser && currentUser.role === 'admin';
 
   if (myReservations.length === 0 && spotReservations.length === 0) {
-    container.innerHTML = "<p>Aucune réservation trouvée.</p>";
+    container.innerHTML = `
+      <div class="empty-state">
+        <p>Vous n'avez pas encore de réservations.</p>
+        <a href="/app-gestion-parking/public/parking" class="btn-primary">Réserver une place</a>
+      </div>
+    `;
     return;
   }
 
@@ -26,21 +37,37 @@ export function renderReservations(myReservations, spotReservations = []) {
     myReservations.forEach(reservation => {
       const div = document.createElement("div");
       div.className = `reservation-item ${reservation.getStatusClass()}`;
-
+      
+      const now = new Date();
+      const startTime = new Date(reservation.start_time);
+      let countdownElement = '';
+      
+      if (startTime > now && reservation.isConfirmed()) {
+        countdownElement = `
+          <div class="reservation-countdown" data-reservation-id="${reservation.id}" data-start-time="${startTime.toISOString()}">
+            <span class="countdown-label">Commence dans : </span>
+            <span class="countdown-value">Calcul en cours...</span>
+          </div>
+        `;
+      }
+      
       div.innerHTML = `
         <h3>Réservation #${reservation.id}</h3>
-        <p>Place ID: ${reservation.spot_id}</p>
-        <p>Période: ${reservation.getFormattedDateRange()}</p>
-        <p>Statut: <span class="${reservation.getStatusClass()}">${reservation.getStatusLabel()}</span></p>
+        <p>Période : ${reservation.getFormattedDateRange()}</p>
+        <p>Statut : <span class="status-badge ${reservation.getStatusClass()}">${reservation.getStatusLabel()}</span></p>
+        ${countdownElement}
         <div class="reservation-actions">
           ${renderActions(reservation)}
         </div>
       `;
+      
       fragment.appendChild(div);
     });
     
     myReservationsSection.appendChild(fragment);
     container.appendChild(myReservationsSection);
+    
+    initializeCountdowns();
   }
 
   if (isOwner && spotReservations.length > 0) {
@@ -70,6 +97,11 @@ export function renderReservations(myReservations, spotReservations = []) {
   attachReservationEvents();
 }
 
+/**
+ * Génère les boutons d'action pour une réservation
+ * @param {Reservation} reservation - La réservation concernée
+ * @returns {string} HTML des boutons d'action
+ */
 function renderActions(reservation) {
   const currentUser = getCurrentUser();
   if (!currentUser) return "";
@@ -87,6 +119,10 @@ function renderActions(reservation) {
 
   return "";
 }
+
+/**
+ * Attache les événements aux boutons des réservations
+ */
 function attachReservationEvents() {
   document.querySelectorAll('.btn-cancel-reservation').forEach(button => {
     button.addEventListener('click', async () => {
@@ -129,8 +165,71 @@ function attachReservationEvents() {
 }
 
 /**
+ * Initialise les décomptes pour les réservations à venir
+ */
+function initializeCountdowns() {
+  const countdownElements = document.querySelectorAll('.reservation-countdown');
+  if (countdownElements.length === 0) return;
+  
+  updateAllCountdowns();
+  
+  setInterval(updateAllCountdowns, 1000);
+}
+
+/**
+ * Met à jour tous les décomptes de réservation
+ */
+function updateAllCountdowns() {
+  const countdownElements = document.querySelectorAll('.reservation-countdown');
+  const now = new Date();
+  
+  countdownElements.forEach(element => {
+    const startTime = new Date(element.dataset.startTime);
+    const countdownValue = element.querySelector('.countdown-value');
+    
+    if (startTime <= now) {
+      countdownValue.textContent = 'Commencée';
+      element.classList.add('countdown-expired');
+    } else {
+      const timeRemaining = getTimeRemaining(startTime);
+      countdownValue.textContent = `${timeRemaining.days}j ${timeRemaining.hours}h ${timeRemaining.minutes}m ${timeRemaining.seconds}s`;
+      
+      element.classList.remove('countdown-soon', 'countdown-very-soon');
+      
+      if (timeRemaining.total <= 3600000) { 
+        element.classList.add('countdown-very-soon');
+      } else if (timeRemaining.total <= 86400000) { 
+        element.classList.add('countdown-soon');
+      }
+    }
+  });
+}
+
+/**
+ * Calcule le temps restant jusqu'à une date donnée
+ * @param {Date} endtime - La date cible
+ * @returns {Object} Le temps restant décomposé
+ */
+function getTimeRemaining(endtime) {
+  const total = endtime - new Date();
+  const seconds = Math.floor((total / 1000) % 60);
+  const minutes = Math.floor((total / 1000 / 60) % 60);
+  const hours = Math.floor((total / (1000 * 60 * 60)) % 24);
+  const days = Math.floor(total / (1000 * 60 * 60 * 24));
+  
+  return {
+    total,
+    days,
+    hours,
+    minutes,
+    seconds
+  };
+}
+
+/**
  * Formulaire de réservation
- * @param {Object} options 
+ * @param {Object} options - Options du formulaire
+ * @returns {string} HTML du formulaire de réservation
  */
 export function renderReservationForm({ spotId = null, spotNumber = null, userId = null, defaultStart = "", defaultEnd = "" } = {}) {
   return `
@@ -164,19 +263,23 @@ export function renderReservationForm({ spotId = null, spotNumber = null, userId
     </div>
   `;
 }
+
+/**
+ * Génère une boîte de dialogue de confirmation de suppression
+ * @param {number} reservationId - ID de la réservation à supprimer
+ * @returns {string} HTML de la boîte de dialogue
+ */
 export function renderDeleteConfirmation(reservationId) {
-    return `
-      <div class="modal">
-        <div class="modal-content">
-          <h2>Confirmer la suppression</h2>
-          <p>Êtes-vous sûr de vouloir supprimer cette réservation ? Cette action est irréversible.</p>
-          <div class="modal-actions">
-            <button id="confirm-delete" data-id="${reservationId}" class="btn-danger">Supprimer</button>
-            <button id="cancel-delete" class="btn-secondary">Annuler</button>
-          </div>
+  return `
+    <div class="modal">
+      <div class="modal-content">
+        <h2>Confirmer la suppression</h2>
+        <p>Êtes-vous sûr de vouloir supprimer cette réservation ? Cette action est irréversible.</p>
+        <div class="modal-actions">
+          <button id="confirm-delete" data-id="${reservationId}" class="btn-danger">Supprimer</button>
+          <button id="cancel-delete" class="btn-secondary">Annuler</button>
         </div>
       </div>
-    `;
-  }
-
-
+    </div>
+  `;
+}

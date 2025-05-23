@@ -1467,6 +1467,56 @@ body {
     color: #777;
 }
 
+.notification-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+}
+
+.notification-actions button {
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s;
+    border: none;
+    font-size: 0.9rem;
+}
+
+.mark-read-btn {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.mark-read-btn:hover {
+    background-color: #e0e0e0;
+}
+
+.delete-notification-btn {
+    background-color: #ffebee;
+    color: #e53935;
+}
+
+.delete-notification-btn:hover {
+    background-color: #ffcdd2;
+}
+
+.notification-item {
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background-color: white;
+}
+
+.notification-item.unread {
+    background-color: #f0f7ff;
+    border-left: 4px solid #3498db;
+}
 /* Style responsive */
 @media (max-width: 768px) {
   .section-row {

@@ -235,6 +235,53 @@ if (preg_match('#^/app-gestion-parking/public/api/reservations/(\d+)/update$#', 
 }
 
 // notifications
+if ($uri === '/app-gestion-parking/public/api/cron/check-reservations' && isset($_SERVER['HTTP_X_CRON_KEY']) && $_SERVER['HTTP_X_CRON_KEY'] === 'votre_clé_secrète') {
+    $reservationRepo = new ReservationRepository();
+    $spotRepo = new ParkingSpotRepository();
+    $notificationRepo = new NotificationRepository();
+    
+    $upcomingReservations = $reservationRepo->getUpcomingReservations();
+    $now = new \DateTime();
+    $reminderThreshold4h = (new \DateTime())->add(new \DateInterval('PT4H'));
+    $reminderThreshold1h = (new \DateTime())->add(new \DateInterval('PT1H'));
+    
+    foreach ($upcomingReservations as $reservation) {
+        if ($reservation->getStatus() !== 'confirmee') continue;
+        
+        $startTime = new \DateTime($reservation->getStartTime());
+        $userId = $reservation->getUserId();
+        $spotId = $reservation->getSpotId();
+        $spot = $spotRepo->getSpotById($spotId);
+        
+        if ($startTime > $now && $startTime <= $reminderThreshold4h && $startTime > $reminderThreshold1h) {
+            if ($spot) {
+                $notificationRepo->createReservationReminder(
+                    $userId,
+                    $reservation->getId(),
+                    $spot->getSpotNumber(),
+                    $reservation->getStartTime(),
+                    '4 heures'
+                );
+            }
+        }
+        
+        if ($startTime > $now && $startTime <= $reminderThreshold1h) {
+            if ($spot) {
+                $notificationRepo->createReservationReminder(
+                    $userId,
+                    $reservation->getId(),
+                    $spot->getSpotNumber(),
+                    $reservation->getStartTime(),
+                    '1 heure'
+                );
+            }
+        }
+    }
+    
+    echo json_encode(['success' => true, 'message' => 'Vérification des notifications terminée']);
+    exit;
+}
+
 if (preg_match('#^/app-gestion-parking/public/api/notifications$#', $uri)) {
     $controller = new Controllers\NotificationController();
     $controller->index();

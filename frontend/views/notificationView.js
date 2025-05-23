@@ -29,17 +29,38 @@ export function renderNotifications(notifications) {
                 <div class="notification-body">
                     ${notification.content}
                 </div>
-                <div class="notification-actions">
-                    ${!notification.isRead() ? 
-                        `<button class="mark-read-btn btn-sm">Marquer comme lu</button>` : ''}
-                    <button class="delete-notification-btn btn-sm btn-danger">Supprimer</button>
-                </div>
+            </div>
+            <div class="notification-actions">
+                ${!notification.isRead() ? 
+                    `<button class="mark-read-btn"><i class="fas fa-check"></i> Marquer comme lu</button>` : ''}
+                <button class="delete-notification-btn"><i class="fas fa-trash"></i> Supprimer</button>
             </div>
         `;
         
         container.appendChild(notificationElement);
+        
+        if (!notification.isRead()) {
+            notificationElement.querySelector('.mark-read-btn').addEventListener('click', async () => {
+                await markAsRead(notification.id);
+                notificationElement.classList.remove('unread');
+                notificationElement.querySelector('.notification-actions').removeChild(
+                    notificationElement.querySelector('.mark-read-btn')
+                );
+            });
+        }
+        
+        notificationElement.querySelector('.delete-notification-btn').addEventListener('click', async () => {
+            await deleteNotification(notification.id);
+            container.removeChild(notificationElement);
+            if (container.children.length === 0) {
+                container.innerHTML = `
+                    <div class="notification-empty">
+                        <p>Vous n'avez pas de notifications</p>
+                    </div>
+                `;
+            }
+        });
     });
-    
 }
 
 export function showToast(message, type = 'info', duration = 3000) {

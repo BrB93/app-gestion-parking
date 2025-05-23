@@ -76,7 +76,7 @@ class NotificationRepository {
         }
         
         $stmt = $this->db->prepare("
-            INSERT INTO notifications (user_id, type, content, is_read) 
+            INSERT INTO notifications (user_id, type, content, is_read)
             VALUES (:user_id, :type, :content, 0)
         ");
         
@@ -119,9 +119,9 @@ class NotificationRepository {
         return $stmt->execute();
     }
     
-    public function createReservationReminder(int $userId, int $reservationId, string $spotNumber, string $startTime): int {
+    public function createReservationReminder(int $userId, int $reservationId, string $spotNumber, string $startTime, string $timeFrame = '4 heures'): int {
         $formattedTime = date('d/m/Y à H:i', strtotime($startTime));
-        $content = "Rappel : Votre réservation de la place n°$spotNumber commence le $formattedTime.";
+        $content = "Rappel : Votre réservation de la place n°$spotNumber commence dans $timeFrame ($formattedTime).";
         
         return $this->createNotification($userId, 'rappel', $content);
     }

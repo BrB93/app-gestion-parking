@@ -122,6 +122,15 @@ class ReservationController {
 
         if ($reservationId) {
             $this->spotRepo->updateSpotStatus($data['spot_id'], 'reservee');
+
+            $spot = $this->spotRepo->getSpotById($data['spot_id']);
+            $notificationRepo = new \Repositories\NotificationRepository();
+            $notificationRepo->createReservationReminder(
+                $currentUser->getId(),
+                $reservationId,
+                $spot->getSpotNumber(),
+                $data['start_time']
+            );
             
             echo json_encode([
                 'success' => true,
@@ -134,6 +143,7 @@ class ReservationController {
             echo json_encode(['error' => 'Erreur lors de la création de la réservation']);
         }
     }
+
     public function cancel($id) {
         Auth::requireAuthentication();
         $currentUser = Auth::getCurrentUser();
@@ -153,22 +163,26 @@ class ReservationController {
         }
 
         $result = $this->reservationRepo->updateStatus($id, 'annulee');
-
+    
         if ($result) {
-            $paymentRepo = new \Repositories\PaymentRepository();
-            $payments = $paymentRepo->getPaymentsByReservationId($id);
+            $spotId = $reservation->getSpotId();
+            $spot = $this->spotRepo->getSpotById($spotId);
             
-            foreach ($payments as $payment) {
-                if ($payment->getStatus() === 'effectue') {
-                    $paymentRepo->updatePaymentStatus($payment->getId(), 'echoue');
-                    
-                    $notificationRepo = new \Repositories\NotificationRepository();
-                    $notificationRepo->createNotification(
-                        $reservation->getUserId(),
-                        'payment',
-                        'Remboursement effectué',
-                        "Votre paiement de {$payment->getAmount()}€ pour la réservation #{$id} a été remboursé suite à l'annulation."
-                    );
+            if ($spot) {
+                $this->spotRepo->updateSpotStatus($spotId, 'libre');
+                
+                $notificationRepo = new \Repositories\NotificationRepository();
+                $userRepo = new \Repositories\UserRepository();
+                $users = $userRepo->getAllUsers();
+                
+                foreach ($users as $user) {
+                    if ($user->getId() !== $currentUser->getId()) {
+                        $notificationRepo->createAvailabilityAlert(
+                            $user->getId(),
+                            $spot->getType(),
+                            1
+                        );
+                    }
                 }
             }
 
