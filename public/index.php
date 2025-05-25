@@ -20,6 +20,7 @@ if (isset($_GET['reset_session'])) {
     exit;
 }
 
+
 // tableau de bord
 if ($uri === '/app-gestion-parking/public/api/dashboard/stats') {
     $auth = new Core\Auth();

@@ -138,35 +138,34 @@ document.addEventListener("DOMContentLoaded", () => {
           const content = document.getElementById('app-content');
           if (content) {
             content.innerHTML = `
-              <div class="landing-page">
-                <div class="hero-section">
-                  <h1>SmartPark</h1>
-                  <p>La solution moderne pour la gestion de votre parking. Réservez, payez et gérez vos places de stationnement en toute simplicité.</p>
-                  <div class="cta-buttons">
-                    <a href="/app-gestion-parking/public/login" class="btn-primary">Connexion / Inscription</a>
-                  </div>
-                </div>
-                
-                <div class="features-section">
+              <div class="welcome-section">
+                <h1>SmartPark - Solution de gestion de parking pour copropriétés</h1>
+                <p class="welcome-text">Découvrez les immeubles à Paris qui utilisent déjà notre solution pour simplifier la gestion de leurs places de parking.</p>
+                <div id="map-container"></div>
+              </div>
+              <div class="welcome-features">
+                <h2>Nos fonctionnalités</h2>
+                <div class="features-grid">
                   <div class="feature-card">
-                    <div class="feature-icon">🚗</div>
-                    <h3>Réservation Facile</h3>
-                    <p>Trouvez et réservez une place de parking en quelques clics, de n'importe où et à tout moment.</p>
+                    <div class="feature-icon">🅿️</div>
+                    <h3>Gestion des places</h3>
+                    <p>Gérez facilement toutes les places de parking de votre copropriété</p>
                   </div>
-                  
-                  <!-- Autres feature-cards... -->
+                  <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>Réservations en ligne</h3>
+                    <p>Système de réservation simple et efficace</p>
+                  </div>
+                  <div class="feature-card">
+                    <div class="feature-icon">💶</div>
+                    <h3>Paiements sécurisés</h3>
+                    <p>Paiements en ligne pour les résidents et visiteurs</p>
+                  </div>
                 </div>
-                
-                <div class="cta-section">
-                  <h2>Prêt à simplifier votre stationnement ?</h2>
-                  <a href="/app-gestion-parking/public/login" class="btn-primary">Commencer maintenant</a>
-                </div>
-                
-                <footer>
-                  <p>© 2025 SmartPark - Application de gestion de parking</p>
-                </footer>
               </div>
             `;
+            
+            loadParisMap();
           }
           return;
         }
@@ -444,6 +443,53 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
   ];
+  
+  function loadParisMap() {
+    const leafletCSS = document.createElement('link');
+    leafletCSS.rel = 'stylesheet';
+    leafletCSS.href = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css';
+    document.head.appendChild(leafletCSS);
+    
+    const leafletScript = document.createElement('script');
+    leafletScript.src = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js';
+    document.head.appendChild(leafletScript);
+    
+    leafletScript.onload = function() {
+      const parisCenter = [48.8566, 2.3522];
+      
+      const map = L.map('map-container').setView(parisCenter, 13);
+      
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+      
+      const buildings = [
+        { lat: 48.8738, lng: 2.3501, name: "Résidence Saint-Lazare", units: 24 },
+        { lat: 48.8580, lng: 2.3377, name: "Les Jardins du Louvre", units: 42 },
+        { lat: 48.8613, lng: 2.3155, name: "Immeuble Champs-Élysées", units: 35 },
+        { lat: 48.8530, lng: 2.3499, name: "Résidence Notre-Dame", units: 18 },
+        { lat: 48.8867, lng: 2.3431, name: "Tour Montmartre", units: 56 },
+        { lat: 48.8463, lng: 2.3371, name: "Les Terrasses de Luxembourg", units: 29 },
+        { lat: 48.8567, lng: 2.2923, name: "Résidence Trocadéro", units: 31 },
+        { lat: 48.8697, lng: 2.3079, name: "Parc Monceau Élégance", units: 45 },
+        { lat: 48.8742, lng: 2.3470, name: "Le Grand Lafayette", units: 38 },
+        { lat: 48.8330, lng: 2.3223, name: "Résidence Montparnasse", units: 27 }
+      ];
+      
+      buildings.forEach(building => {
+        const marker = L.marker([building.lat, building.lng]).addTo(map);
+        marker.bindPopup(`
+          <strong>${building.name}</strong><br>
+          ${building.units} places de parking<br>
+          <a href="/app-gestion-parking/public/login">Voir les disponibilités</a>
+        `);
+      });
+      
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 100);
+    };
+  }
   
   const router = new Router(routes);
   router.init();
