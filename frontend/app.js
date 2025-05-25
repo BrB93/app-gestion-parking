@@ -119,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    const cancelButton = document.querySelector('#person-form-container #cancel-form');
+    const cancelButton = document.querySelector('#person-form-container #cancel-person-form');
     if (cancelButton) {
       cancelButton.addEventListener('click', () => {
         window.location.reload();

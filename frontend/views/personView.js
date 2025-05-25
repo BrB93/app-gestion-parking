@@ -128,7 +128,7 @@ export async function renderPersonForm(person = null, userId = null) {
         
         <div class="form-actions">
           <button type="submit" class="btn-primary">${id ? 'Mettre à jour' : 'Créer'}</button>
-          <button type="button" id="cancel-form" class="btn-secondary">Annuler</button>
+          <button type="button" id="cancel-person-form" class="btn-secondary">Annuler</button>
         </div>
         <div id="person-form-error" class="error-message"></div>
       </form>

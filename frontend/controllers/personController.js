@@ -205,7 +205,7 @@ function setupFormSubmission(id = null) {
     const form = document.getElementById(formId);
     const errorElement = document.getElementById('person-form-error');
 
-    document.getElementById('cancel-form').addEventListener('click', () => {
+    document.getElementById('cancel-person-form').addEventListener('click', () => {
         loadPersons();
     });
 
