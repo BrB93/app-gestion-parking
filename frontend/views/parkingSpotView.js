@@ -131,6 +131,7 @@ function renderSpotsGrid(spots, container) {
     
     const currentUser = getCurrentUser();
     const isAdmin = currentUser && currentUser.role === 'admin';
+    const isUser = currentUser && currentUser.role === 'user';
     
     const spotsGrid = document.createElement("div");
     spotsGrid.className = "parking-grid";
@@ -141,7 +142,6 @@ function renderSpotsGrid(spots, container) {
         
         let canBeReserved = spot.isAvailable();
         
-
         if (spot.status === 'reservee') {
             canBeReserved = true;
         }
@@ -152,7 +152,7 @@ function renderSpotsGrid(spots, container) {
             <p>Statut: <span class="${spot.getStatusClass()}">${spot.status}</span></p>
             ${spot.owner_id ? `<p>Propriétaire ID: ${spot.owner_id}</p>` : ''}
             <div class="spot-actions">
-                ${canBeReserved && !isAdmin ? `<button class="btn-reserve-spot" data-id="${spot.id}">Réserver</button>` : ''}
+                ${canBeReserved && isUser ? `<button class="btn-reserve-spot" data-id="${spot.id}">Réserver</button>` : ''}
                 ${isAdmin ? `<button class="btn-edit-spot" data-id="${spot.id}">Modifier</button>` : ''}
                 ${isAdmin ? `<button class="btn-delete-spot" data-id="${spot.id}">Supprimer</button>` : ''}
             </div>
@@ -164,7 +164,6 @@ function renderSpotsGrid(spots, container) {
     container.appendChild(spotsGrid);
     attachSpotEvents();
 }
-
 function attachSpotEvents() {
     document.querySelectorAll('.btn-reserve-spot').forEach(button => {
         button.addEventListener('click', () => {
