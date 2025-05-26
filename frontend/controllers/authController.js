@@ -334,8 +334,10 @@ export function checkProtectedRoute() {
 
   if (!user) {
     console.log("Utilisateur non connecté, redirection vers la page de login...");
-    localStorage.setItem("redirect_after_login", window.location.pathname);
-    window.location.href = "/app-gestion-parking/public/login";
+    if (!window.location.pathname.includes('/login')) {
+      localStorage.setItem("redirect_after_login", window.location.pathname);
+      window.location.href = "/app-gestion-parking/public/login";
+    }
     return false;
   }
 

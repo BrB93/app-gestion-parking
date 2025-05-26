@@ -1,11 +1,13 @@
 import { fetchJSON, postJSON } from '../core/fetchWrapper.js';
 import { Notification } from '../models/notification.js';
 import { renderNotifications, showToast } from '../views/notificationView.js';
+import { getCurrentUser } from '../controllers/authController.js';
 
 let notificationsCache = [];
 let unreadCount = 0;
 
 export async function loadNotifications() {
+    await new Promise(resolve => setTimeout(resolve, 100));
     try {
         const response = await fetch('/app-gestion-parking/public/api/notifications');
         
@@ -95,61 +97,21 @@ export async function markAllAsRead() {
     }
 }
 
-export async function deleteNotification(notificationId) {
-    try {
-        const response = await postJSON(`/app-gestion-parking/public/api/notifications/${notificationId}/delete`, {});
-        
-        if (response.success) {
-            const index = notificationsCache.findIndex(n => n.id == notificationId);
-            if (index !== -1) {
-                if (!notificationsCache[index].is_read) {
-                    unreadCount = Math.max(0, unreadCount - 1);
-                }
-                notificationsCache.splice(index, 1);
-                updateNotificationBadge();
-                renderNotifications(notificationsCache);
-            }
-            showToast('Notification supprimée', 'success');
-        }
-        
-        return response;
-    } catch (error) {
-        console.error(`Erreur lors de la suppression de la notification ${notificationId}:`, error);
-        showToast('Erreur: impossible de supprimer la notification', 'error');
-        return { error: error.message };
-    }
-}
-
-export async function deleteAllNotifications() {
-    try {
-        const response = await postJSON('/app-gestion-parking/public/api/notifications/delete-all', {});
-        
-        if (response.success) {
-            notificationsCache = [];
-            unreadCount = 0;
-            updateNotificationBadge();
-            renderNotifications([]);
-            showToast('Toutes les notifications ont été supprimées', 'success');
-        }
-        
-        return response;
-    } catch (error) {
-        console.error('Erreur lors de la suppression de toutes les notifications:', error);
-        showToast('Erreur: impossible de supprimer les notifications', 'error');
-        return { error: error.message };
-    }
-}
-
 export async function getUnreadCount() {
-    try {
-        const data = await fetchJSON('/app-gestion-parking/public/api/notifications/unread-count');
-        unreadCount = data.count;
-        updateNotificationBadge();
-        return unreadCount;
-    } catch (error) {
-        console.error('Erreur lors de la récupération du nombre de notifications non lues:', error);
-        return 0;
+  try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      return 0;
     }
+    
+    const response = await fetchJSON("/app-gestion-parking/public/api/notifications/unread-count");
+    unreadCount = response.count || 0;
+    updateNotificationBadge();
+    return unreadCount;
+  } catch (error) {
+    console.log("Erreur lors de la récupération du nombre de notifications non lues:", error);
+    return 0;
+  }
 }
 
 function updateNotificationBadge() {
@@ -164,50 +126,96 @@ function updateNotificationBadge() {
     }
 }
 
-export function setupNotificationEvents() {
-    const markAllReadBtn = document.getElementById('mark-all-notifications-read');
-    if (markAllReadBtn) {
-        markAllReadBtn.addEventListener('click', markAllAsRead);
-    }
-    
-    const deleteAllBtn = document.getElementById('delete-all-notifications');
-    if (deleteAllBtn) {
-        deleteAllBtn.addEventListener('click', () => {
-            if (confirm('Êtes-vous sûr de vouloir supprimer toutes vos notifications ?')) {
-                deleteAllNotifications();
-            }
-        });
-    }
-    
-    document.querySelectorAll('.mark-read-btn').forEach(button => {
-        button.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const notificationId = button.closest('.notification-item').dataset.id;
-            markAsRead(notificationId).then(() => {
-                const notificationElement = button.closest('.notification-item');
-                notificationElement.classList.remove('unread');
-                button.style.display = 'none';
-            });
-        });
-    });
-    
-    document.querySelectorAll('.delete-notification-btn').forEach(button => {
-        button.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const notificationId = button.closest('.notification-item').dataset.id;
-            deleteNotification(notificationId);
-        });
+function handleMarkReadClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const notificationId = e.currentTarget.closest('.notification-item').dataset.id;
+    markAsRead(notificationId).then(() => {
+        const notificationElement = e.currentTarget.closest('.notification-item');
+        notificationElement.classList.remove('unread');
+        e.currentTarget.style.display = 'none';
     });
 }
 
+export function setupNotificationEvents() {
+    const markAllReadBtn = document.getElementById('mark-all-notifications-read');
+    if (markAllReadBtn) {
+        markAllReadBtn.removeEventListener('click', markAllAsRead);
+        markAllReadBtn.addEventListener('click', markAllAsRead);
+    }
+    
+    const container = document.getElementById('notifications-container');
+    if (container) {
+        container.removeEventListener('click', handleNotificationContainerClicks);
+        container.addEventListener('click', handleNotificationContainerClicks);
+    }
+}
+
+function handleNotificationContainerClicks(e) {
+    const markReadButton = e.target.closest('.mark-read-btn');
+    if (markReadButton) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (markReadButton.dataset.processing === 'true') {
+            return;
+        }
+        
+        markReadButton.dataset.processing = 'true';
+        
+        const notificationItem = markReadButton.closest('.notification-item');
+        const notificationId = notificationItem.dataset.id;
+        
+        markAsRead(notificationId).then(() => {
+            notificationItem.classList.remove('unread');
+            markReadButton.style.display = 'none';
+            
+            notificationItem.style.opacity = '0';
+            notificationItem.style.transition = 'opacity 0.5s';
+            
+            setTimeout(() => {
+                if (notificationItem.parentNode) {
+                    notificationItem.parentNode.removeChild(notificationItem);
+                    
+                    const container = document.getElementById('notifications-container');
+                    if (container && container.querySelectorAll('.notification-item').length === 0) {
+                        container.innerHTML = `
+                            <div class="notification-empty">
+                                <p>Vous n'avez pas de notifications non lues</p>
+                            </div>
+                        `;
+                    }
+                }
+            }, 500);
+        }).finally(() => {
+            markReadButton.dataset.processing = 'false';
+        });
+    }
+}
+
 export function initializeNotifications() {
-    getUnreadCount();
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+        return;
+    }
     
-    setInterval(getUnreadCount, 60000);
+    getUnreadCount().then(count => {
+        unreadCount = count;
+        updateNotificationBadge();
+    });
     
-    setTimeout(showUnreadNotificationsToast, 3000);
+    setInterval(() => {
+        if (getCurrentUser()) {
+            getUnreadCount().then(count => {
+                unreadCount = count;
+                updateNotificationBadge();
+            });
+        }
+    }, 60000);
+    
+    if (currentUser) {
+        setTimeout(showUnreadNotificationsToast, 3000);
+    }
 }
 
 async function showUnreadNotificationsToast() {

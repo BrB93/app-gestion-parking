@@ -1,13 +1,15 @@
-import { markAsRead, deleteNotification } from '../controllers/notificationController.js';
+import { markAsRead } from '../controllers/notificationController.js';
 
 export function renderNotifications(notifications) {
     const container = document.getElementById('notifications-container');
     if (!container) return;
 
-    if (notifications.length === 0) {
+    const unreadNotifications = notifications.filter(notification => !notification.isRead());
+
+    if (unreadNotifications.length === 0) {
         container.innerHTML = `
             <div class="notification-empty">
-                <p>Vous n'avez pas de notifications</p>
+                <p>Vous n'avez pas de notifications non lues</p>
             </div>
         `;
         return;
@@ -15,9 +17,9 @@ export function renderNotifications(notifications) {
 
     container.innerHTML = '';
     
-    notifications.forEach(notification => {
+    unreadNotifications.forEach(notification => {
         const notificationElement = document.createElement('div');
-        notificationElement.className = `notification-item ${notification.getTypeClass()} ${notification.isRead() ? '' : 'unread'}`;
+        notificationElement.className = `notification-item ${notification.getTypeClass()} unread`;
         notificationElement.dataset.id = notification.id;
         
         notificationElement.innerHTML = `
@@ -31,193 +33,95 @@ export function renderNotifications(notifications) {
                 </div>
             </div>
             <div class="notification-actions">
-                ${!notification.isRead() ? 
-                    `<button class="mark-read-btn"><i class="fas fa-check"></i> Marquer comme lu</button>` : ''}
-                <button class="delete-notification-btn"><i class="fas fa-trash"></i> Supprimer</button>
+                <button class="mark-read-btn" data-id="${notification.id}"><i class="fas fa-check"></i> Marquer comme lu</button>
             </div>
         `;
         
         container.appendChild(notificationElement);
+    });
+    
+    setupNotificationEventDelegation(container);
+}
+
+function setupNotificationEventDelegation(container) {
+    container.removeEventListener('click', handleNotificationContainerClick);
+    container.addEventListener('click', handleNotificationContainerClick);
+}
+
+function handleNotificationContainerClick(e) {
+    const markReadBtn = e.target.closest('.mark-read-btn');
+    if (markReadBtn) {
+        e.preventDefault();
         
-        if (!notification.isRead()) {
-            notificationElement.querySelector('.mark-read-btn').addEventListener('click', async () => {
-                await markAsRead(notification.id);
-                notificationElement.classList.remove('unread');
-                const markReadBtn = notificationElement.querySelector('.mark-read-btn');
-                if (markReadBtn && markReadBtn.parentNode) {
-                    markReadBtn.parentNode.removeChild(markReadBtn);
-                }
-            });
+        if (markReadBtn.dataset.processing === 'true') {
+            return;
         }
         
-        notificationElement.querySelector('.delete-notification-btn').addEventListener('click', async () => {
-            try {
-                await deleteNotification(notification.id);
+        const notificationId = markReadBtn.closest('.notification-item').dataset.id;
+        markReadBtn.dataset.processing = 'true';
+        markReadBtn.disabled = true;
+        
+        markAsRead(notificationId).then(() => {
+            const notificationElement = markReadBtn.closest('.notification-item');
+            notificationElement.classList.remove('unread');
+            markReadBtn.style.display = 'none';
+            
+            notificationElement.style.opacity = '0';
+            notificationElement.style.transition = 'opacity 0.5s';
+            
+            setTimeout(() => {
                 if (notificationElement.parentNode) {
                     notificationElement.parentNode.removeChild(notificationElement);
                     
-                    if (container.children.length === 0) {
+                    if (container.querySelectorAll('.notification-item').length === 0) {
                         container.innerHTML = `
                             <div class="notification-empty">
-                                <p>Vous n'avez pas de notifications</p>
+                                <p>Vous n'avez pas de notifications non lues</p>
                             </div>
                         `;
                     }
                 }
-            } catch (error) {
-                console.error(`Erreur lors de la suppression: ${error.message}`);
-            }
+            }, 500);
+        }).finally(() => {
+            markReadBtn.dataset.processing = 'false';
+            markReadBtn.disabled = false;
         });
-    });
+    }
 }
 
 export function showToast(message, type = 'info', duration = 3000) {
-    const existingToasts = document.querySelectorAll('.toast');
-    existingToasts.forEach(toast => {
-        if (toast.dataset.autoDismiss === 'true') {
-            toast.remove();
-        }
-    });
-    
     const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.dataset.autoDismiss = 'true';
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<p>${message}</p>`;
     
-    toast.innerHTML = `
-        <div class="toast-content">
-            <span class="toast-message">${message}</span>
-            <button class="toast-close">&times;</button>
-        </div>
-    `;
-    
-    const toastContainer = document.querySelector('.toast-container');
-    if (!toastContainer) {
-        const newToastContainer = document.createElement('div');
-        newToastContainer.className = 'toast-container';
-        document.body.appendChild(newToastContainer);
-        newToastContainer.appendChild(toast);
-    } else {
+    const toastContainer = document.getElementById('toast-container');
+    if (toastContainer) {
         toastContainer.appendChild(toast);
-    }
-    
-    toast.querySelector('.toast-close').addEventListener('click', () => {
-        toast.remove();
-    });
-    
-    if (duration > 0) {
+        
         setTimeout(() => {
-            toast.classList.add('toast-hiding');
-            setTimeout(() => toast.remove(), 500);
+            toast.classList.add('show');
+        }, 10);
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
         }, duration);
     }
-    
-    return toast;
 }
 
-(function addToastStyles() {
-    if (document.getElementById('toast-styles')) return;
+export function addNotificationBadge(container) {
+    if (!container) return;
     
-    const style = document.createElement('style');
-    style.id = 'toast-styles';
-    style.textContent = `
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .toast {
-            background-color: white;
-            border-radius: 4px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            padding: 12px 16px;
-            min-width: 280px;
-            max-width: 350px;
-            animation: toast-slide-in 0.3s ease-out;
-            transition: opacity 0.3s, transform 0.3s;
-        }
-        
-        .toast-hiding {
-            opacity: 0;
-            transform: translateX(100%);
-        }
-        
-        .toast-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .toast-close {
-            background: none;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-            color: #999;
-        }
-        
-        .toast-close:hover {
-            color: #333;
-        }
-        
-        .toast-info {
-            border-left: 4px solid #3498db;
-        }
-        
-        .toast-success {
-            border-left: 4px solid #2ecc71;
-        }
-        
-        .toast-warning {
-            border-left: 4px solid #f39c12;
-        }
-        
-        .toast-error {
-            border-left: 4px solid #e74c3c;
-        }
-        
-        @keyframes toast-slide-in {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-    `;
+    const badge = document.createElement('span');
+    badge.className = 'notification-badge';
+    badge.style.display = 'none';
     
-    document.head.appendChild(style);
-})();
-
-export function addNotificationBadge() {
-    const navLinks = document.querySelector('.nav-links');
-    if (!navLinks) return;
+    container.classList.add('has-badge');
+    container.appendChild(badge);
     
-    const existingLink = document.querySelector('a[href="/app-gestion-parking/public/notifications"]');
-    if (existingLink) {
-        if (!existingLink.querySelector('.notification-badge')) {
-            existingLink.innerHTML = `
-                Notifications 
-                <span class="notification-badge" style="display: none;">0</span>
-            `;
-        }
-        return;
-    }
-    
-    const notificationLink = document.createElement('a');
-    notificationLink.href = '/app-gestion-parking/public/notifications';
-    notificationLink.innerHTML = `
-        Notifications 
-        <span class="notification-badge" style="display: none;">0</span>
-    `;
-    
-    notificationLink.style.position = 'relative';
-    
-    navLinks.appendChild(notificationLink);
+    return badge;
 }

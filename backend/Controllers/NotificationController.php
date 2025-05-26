@@ -106,14 +106,14 @@ class NotificationController {
         }
     }
     
-    public function delete($id) {
-        Auth::requireAuthentication();
-        
-        $notification = $this->notificationRepo->getNotificationById($id);
+public function delete($id) {
+    header('Content-Type: application/json');
+    
+    try {
+        $notification = $this->notificationRepository->getNotificationById($id);
         
         if (!$notification) {
-            http_response_code(404);
-            echo json_encode(['error' => 'Notification non trouvée']);
+            echo json_encode(['success' => true, 'message' => 'Notification déjà supprimée']);
             return;
         }
         
@@ -124,15 +124,22 @@ class NotificationController {
             return;
         }
         
-        $result = $this->notificationRepo->deleteNotification($id);
+        $stmt = $this->db->prepare("DELETE FROM notifications WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $success = $stmt->execute();
         
-        if ($result) {
-            echo json_encode(['success' => true, 'message' => 'Notification supprimée']);
-        } else {
+        if (!$success) {
             http_response_code(500);
-            echo json_encode(['error' => 'Erreur lors de la suppression']);
+            echo json_encode(['success' => false, 'message' => 'Erreur lors de la suppression']);
+            return;
         }
+        
+        echo json_encode(['success' => true, 'message' => 'Notification supprimée avec succès']);
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
+}
     
     public function deleteAll() {
         Auth::requireAuthentication();

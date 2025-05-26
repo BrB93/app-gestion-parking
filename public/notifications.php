@@ -21,7 +21,6 @@ if (!Auth::isAuthenticated()) {
     <h1>Mes Notifications</h1>
     <div class="notification-page-actions">
       <button id="mark-all-notifications-read" class="btn-secondary">Marquer tout comme lu</button>
-      <button id="delete-all-notifications" class="btn-danger">Supprimer toutes les notifications</button>
     </div>
     <div id="notifications-container" class="notifications-container">
       <div class="loading">Chargement des notifications...</div>

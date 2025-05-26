@@ -20,6 +20,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const currentUser = getCurrentUser();
   if (currentUser) {
     initializeNotifications();
+    addNotificationBadge();
+
   }
 
   function setupUserFormSubmission(userId) {
