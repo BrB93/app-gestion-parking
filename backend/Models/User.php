@@ -9,7 +9,9 @@ class User {
         private string $role,
         private ?string $password = null,
         private ?string $phone = null,
-        private int $is_active = 1
+        private int $is_active = 1,
+        private int $is_verified = 0,
+        private ?int $spot_id = null
     ) {}
 
     public function getId(): int { return $this->id; }
@@ -19,6 +21,9 @@ class User {
     public function getRole(): string { return $this->role; }
     public function getPhone(): ?string { return $this->phone; }
     public function isActive(): bool { return $this->is_active == 1; }
+    public function isVerified(): bool { return $this->is_verified == 1; }
+    public function getSpotId(): ?int { return $this->spot_id; }
+    
     public function verifyPassword(string $password): bool {
         return password_verify($password, $this->password);
     }

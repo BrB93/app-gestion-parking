@@ -107,37 +107,75 @@ public function register() {
     }
     
     $role = $data['role'];
+    
     if (!in_array($role, ['user', 'owner', 'admin'])) {
         http_response_code(400);
         echo json_encode(['error' => 'Rôle invalide']);
         return;
     }
-        
-        if ($role === 'admin') {
-            $admins = $this->userRepo->getUsersByRole('admin');
-            
-            if (count($admins) > 0) {
-                if (!isset($data['admin_key']) || $data['admin_key'] !== $this->adminKey) {
-                    http_response_code(403);
-                    echo json_encode(['error' => 'Clé d\'administration invalide']);
-                    return;
-                }
-            }
+    
+    $spotId = null;
+    if ($role === 'owner') {
+        if (!isset($data['verification_code'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Code de vérification manquant']);
+            return;
         }
         
-    $result = $this->userRepo->createUser(
+        $verificationCode = $data['verification_code'];
+        $spotNumber = isset($data['spot_number']) ? (int)$data['spot_number'] : null;
+        
+        if (!(substr($verificationCode, 0, 1) === "A" || $verificationCode === "TEST1234")) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Code de vérification invalide']);
+            return;
+        }
+        
+        if ($spotNumber < 1 || $spotNumber > 204) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Numéro de place invalide']);
+            return;
+        }
+        
+        $spotRepo = new \Repositories\ParkingSpotRepository();
+        $existingSpot = $spotRepo->getSpotByNumber($spotNumber);
+        
+        if ($existingSpot && $existingSpot->getOwnerId() !== null) {
+            http_response_code(409);
+            echo json_encode(['error' => 'Cette place est déjà associée à un propriétaire']);
+            return;
+        }
+        
+        if (!$existingSpot) {
+            $spotCreated = $spotRepo->createSpot($spotNumber, 'normale', 'libre', null, null);
+            if (!$spotCreated) {
+                http_response_code(500);
+                echo json_encode(['error' => 'Erreur lors de la création de la place de parking']);
+                return;
+            }
+            $existingSpot = $spotRepo->getSpotByNumber($spotNumber);
+        }
+        
+        $spotId = $existingSpot ? $existingSpot->getId() : null;
+    }
+    
+    $result = $this->userRepo->createUserWithSpot(
         $data['username'], 
         $data['email'], 
         $data['password'], 
-        $role
+        $role,
+        $spotId
     );
     
     if ($result) {
         $user = $this->userRepo->findUserByName($data['username']);
         
-        if ($data['phone']) {
-            $userData = ['phone' => $data['phone']];
-            $this->userRepo->updateUser($user->getId(), $userData);
+        if (isset($data['phone'])) {
+            $this->userRepo->updateUser($user->getId(), ['phone' => $data['phone']]);
+        }
+        
+        if ($role === 'owner' && $spotId) {
+            $spotRepo->updateSpot($spotId, ['owner_id' => $user->getId()]);
         }
         
         session_start();
@@ -146,18 +184,19 @@ public function register() {
         $_SESSION['user_email'] = $user->getEmail();
         $_SESSION['user_role'] = $user->getRole();
         $_SESSION['user_phone'] = $user->getPhone();
+        $_SESSION['user_spot_id'] = $spotId;
         
         echo json_encode([
-            'success' => true, 
-            'message' => 'Compte créé avec succès', 
-            'user_id' => $user->getId(),
+            'success' => true,
             'user' => [
                 'id' => $user->getId(),
                 'username' => $user->getName(),
                 'email' => $user->getEmail(),
                 'role' => $user->getRole(),
-                'phone' => $user->getPhone()
-            ]
+                'phone' => $user->getPhone(),
+                'spot_id' => $spotId
+            ],
+            'redirect_to' => $user->getRole() === 'owner' ? '/app-gestion-parking/public/profile' : '/app-gestion-parking/public/'
         ]);
     } else {
         http_response_code(500);

@@ -155,4 +155,22 @@ class UserRepository {
     }
     return $users;
     }
+    
+    public function createUserWithSpot(string $username, string $email, string $password, string $role = 'user', ?int $spotId = null): bool {
+    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+    $is_active = 1;
+    $is_verified = $role === 'owner' ? 1 : 0; // Les propriétaires sont automatiquement vérifiés
+    
+    $stmt = $this->db->prepare("INSERT INTO users (username, email, password, role, is_active, is_verified, spot_id) VALUES (:username, :email, :password, :role, :is_active, :is_verified, :spot_id)");
+    $stmt->bindParam(':username', $username, PDO::PARAM_STR);
+    $stmt->bindParam(':email', $email, PDO::PARAM_STR);
+    $stmt->bindParam(':password', $hashedPassword, PDO::PARAM_STR);
+    $stmt->bindParam(':role', $role, PDO::PARAM_STR);
+    $stmt->bindParam(':is_active', $is_active, PDO::PARAM_INT);
+    $stmt->bindParam(':is_verified', $is_verified, PDO::PARAM_INT);
+    $stmt->bindParam(':spot_id', $spotId, $spotId ? PDO::PARAM_INT : PDO::PARAM_NULL);
+    
+    return $stmt->execute();
+    }
+
 }

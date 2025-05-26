@@ -162,4 +162,24 @@ class ParkingSpotRepository {
         return $stmt->execute();
     }
 
+    public function getSpotByNumber(string $spotNumber): ?ParkingSpot {
+    $stmt = $this->db->prepare("SELECT * FROM parking_spots WHERE spot_number = :spot_number");
+    $stmt->bindParam(':spot_number', $spotNumber, PDO::PARAM_STR);
+    $stmt->execute();
+    
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$row) {
+        return null;
+    }
+    
+    return new ParkingSpot(
+        $row['id'],
+        $row['spot_number'], 
+        $row['type'], 
+        $row['status'],
+        $row['owner_id'],
+        $row['pricing_id']
+    );
+}
+
 }
