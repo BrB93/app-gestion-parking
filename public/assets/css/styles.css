@@ -1873,6 +1873,48 @@ footer {
   }
 }
 
+.user-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin: 2rem 0;
+  gap: 1.5rem;
+}
+
+.action-card {
+  flex: 1;
+  min-width: 250px;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  background-color: #fff;
+  transition: transform 0.3s ease;
+}
+
+.action-card:hover {
+  transform: translateY(-5px);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.owner-card {
+  background-color: #f8f4ff;
+}
+
+.condo-card {
+  background-color: #f0f8ff;
+}
+
+.condo-card a {
+  color: #0066cc;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
 /* Style responsive */
 @media (max-width: 768px) {
   .section-row {

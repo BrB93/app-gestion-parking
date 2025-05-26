@@ -131,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const routes = [
     {
-      path: '/app-gestion-parking/public/',
+path: '/app-gestion-parking/public/',
       controller: async () => {
         console.log("Page d'accueil chargée");
         
@@ -142,9 +142,33 @@ document.addEventListener("DOMContentLoaded", () => {
             content.innerHTML = `
               <div class="welcome-section">
                 <h1>SmartPark - Solution de gestion de parking pour copropriétés</h1>
-                <p class="welcome-text">Découvrez les immeubles à Paris qui utilisent déjà notre solution pour simplifier la gestion de leurs places de parking.</p>
+                <p class="welcome-text">Découvrez les places de parkings à louer à l'heure, au jour ou au mois dans cette copropriété!</p>
                 <div id="map-container"></div>
               </div>
+              
+              <div class="user-actions">
+                <div class="action-card">
+                  <h3>Vous êtes un résident ou visiteur?</h3>
+                  <p>Connectez-vous ou créez un compte pour réserver une place de parking.</p>
+                  <div class="action-buttons">
+                    <a href="/app-gestion-parking/public/login" class="btn btn-primary">Se connecter</a>
+                    <a href="/app-gestion-parking/public/register" class="btn btn-secondary">S'inscrire</a>
+                  </div>
+                </div>
+                
+                <div class="action-card owner-card">
+                  <h3>Vous êtes propriétaire d'une place?</h3>
+                  <p>Connectez-vous pour gérer vos places de parking et suivre vos revenus.</p>
+                  <a href="/app-gestion-parking/public/login" class="btn btn-secondary">Espace propriétaire</a>
+                </div>
+                
+                <div class="action-card condo-card">
+                  <h3>Vous représentez une copropriété?</h3>
+                  <p>Intéressé par notre solution pour votre immeuble ou résidence?</p>
+                  <p>Contactez notre équipe à <a href="mailto:contact@smartpark.fr">contact@smartpark.fr</a> pour une démonstration personnalisée.</p>
+                </div>
+              </div>
+              
               <div class="welcome-features">
                 <h2>Nos fonctionnalités</h2>
                 <div class="features-grid">
