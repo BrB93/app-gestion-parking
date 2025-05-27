@@ -81,6 +81,23 @@ body {
     border-radius: 5px;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
   }
+
+  #create-spot-form {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+#app-content h2 {
+  text-align: center;
+  margin-bottom: 24px;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
   
   .form-group {
     margin-bottom: 15px;
@@ -91,6 +108,18 @@ body {
     margin-bottom: 5px;
     font-weight: bold;
   }
+
+  #type option[value="normale"] {
+  color: #2c3e50;
+}
+
+#type option[value="handicapee"] {
+  color: #3498db;
+}
+
+#type option[value="reservee"] {
+  color: #e67e22;
+}
   
   .form-group input {
     width: 100%;
@@ -1198,6 +1227,51 @@ body {
   justify-content: center;
   align-items: center;
   z-index: 1100;
+}
+.success-notification h2 {
+  color: #2ecc71;
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.notification-content {
+  margin: 20px 0;
+}
+
+.notification-content p {
+  color: #2c3e50;
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.success-notification .btn-primary {
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-top: 15px;
+}
+
+.success-notification .btn-primary:hover {
+  background-color: #27ae60;
+}
+
+/* Si vous n'avez pas déjà ces styles pour la modale de base */
+.modal-content {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+  width: 90%;
+  margin: 0 auto;
 }
 
 /* Badge de notification */
