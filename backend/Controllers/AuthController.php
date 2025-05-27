@@ -62,6 +62,7 @@ class AuthController {
         $_SESSION['user_email'] = $user->getEmail();
         $_SESSION['user_role'] = $user->getRole();
         $_SESSION['user_phone'] = $user->getPhone();
+        $_SESSION['last_activity'] = time();
         
         $_SESSION['just_logged_in'] = true;
     

@@ -1,39 +1,59 @@
 export async function fetchJSON(url) {
-  const response = await fetch(url, {
-    method: 'GET',
-    credentials: 'same-origin'
-  });
-  
-  if (!response.ok) {
-    if (response.status === 401) {
-      console.log("Session expirée ou utilisateur non connecté");
-      localStorage.setItem("redirect_after_login", window.location.pathname);
-      window.location.href = "/app-gestion-parking/public/login";
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      credentials: 'same-origin'
+    });
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        console.log("Session expirée ou utilisateur non connecté");
+        
+        const currentPath = window.location.pathname;
+        if (!currentPath.includes('/login')) {
+          localStorage.setItem("redirect_after_login", currentPath);
+          window.location.href = "/app-gestion-parking/public/login?session_expired=true";
+        }
+        throw new Error('Session expirée');
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-    throw new Error(`HTTP error! status: ${response.status}`);
+    
+    return response.json();
+  } catch (error) {
+    console.error("Erreur fetchJSON:", error);
+    throw error;
   }
-  
-  return response.json();
 }
 
 export async function postJSON(url, data) {
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', 
-    body: JSON.stringify(data),
-  });
-  
-  if (!response.ok) {
-    if (response.status === 401) {
-      console.log("Session expirée ou utilisateur non connecté");
-      localStorage.setItem("redirect_after_login", window.location.pathname);
-      window.location.href = "/app-gestion-parking/public/login";
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', 
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        console.log("Session expirée ou utilisateur non connecté");
+        
+        const currentPath = window.location.pathname;
+        if (!currentPath.includes('/login')) {
+          localStorage.setItem("redirect_after_login", currentPath);
+          window.location.href = "/app-gestion-parking/public/login?session_expired=true";
+        }
+        throw new Error('Session expirée');
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-    throw new Error(`HTTP error! status: ${response.status}`);
+    
+    return response.json();
+  } catch (error) {
+    console.error("Erreur postJSON:", error);
+    throw error;
   }
-  
-  return response.json();
 }

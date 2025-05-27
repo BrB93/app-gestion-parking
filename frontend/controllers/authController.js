@@ -124,6 +124,15 @@ export function initLoginForm() {
   const loginFormContainer = document.getElementById("login-form-container");
   const registerFormContainer = document.getElementById("register-form-container");
 
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('session_expired')) {
+    const errorElement = document.getElementById('login-error');
+    if (errorElement) {
+      errorElement.textContent = "Votre session a expiré. Veuillez vous reconnecter.";
+      errorElement.style.display = "block";
+    }
+  }
+
   if (loginTab && registerTab) {
     loginTab.addEventListener("click", () => {
       loginTab.classList.add("active");

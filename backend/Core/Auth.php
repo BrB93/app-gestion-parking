@@ -3,13 +3,46 @@ namespace Core;
 use Repositories\UserRepository;
 
 class Auth {
-public static function isAuthenticated(): bool {
+    const SESSION_TIMEOUT = 1800;
+    
+    public static function isAuthenticated(): bool {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
         
-        return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']) && 
-            isset($_SESSION['user_role']) && !empty($_SESSION['user_role']);
+        $isLoggedIn = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']) && 
+                      isset($_SESSION['user_role']) && !empty($_SESSION['user_role']);
+        
+        if ($isLoggedIn) {
+            if (isset($_SESSION['last_activity']) && 
+                (time() - $_SESSION['last_activity'] > self::SESSION_TIMEOUT)) {
+                self::logout();
+                return false;
+            }
+            
+            $_SESSION['last_activity'] = time();
+            return true;
+        }
+        
+        return false;
+    }
+    
+    public static function logout(): void {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        
+        $_SESSION = [];
+        
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params["path"], $params["domain"],
+                $params["secure"], $params["httponly"]
+            );
+        }
+        
+        session_destroy();
     }
     
     public static function getCurrentUser() {
