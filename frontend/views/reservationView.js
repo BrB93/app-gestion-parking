@@ -227,39 +227,46 @@ function getTimeRemaining(endtime) {
 }
 
 /**
- * Formulaire de réservation
+ * Formulaire de réservation dans une modale
  * @param {Object} options - Options du formulaire
- * @returns {string} HTML du formulaire de réservation
+ * @returns {string} HTML du formulaire de réservation dans une modale
  */
 export function renderReservationForm({ spotId = null, spotNumber = null, userId = null, defaultStart = "", defaultEnd = "" } = {}) {
   return `
-    <div class="form-container">
-      <h2>Réserver la place ${spotNumber || ''}</h2>
-      <form id="reservation-form">
-        <input type="hidden" name="spot_id" value="${spotId || ''}">
-        <input type="hidden" name="user_id" value="${userId || ''}">
-        <div class="form-group">
-          <label for="spot_number">Numéro de place:</label>
-          <input type="text" id="spot_number" value="${spotNumber || ''}" readonly class="form-control-readonly">
+    <div class="modal-container" id="reservation-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Réserver la place ${spotNumber || ''}</h2>
+          <span class="close-modal" id="close-reservation-modal">&times;</span>
         </div>
-        <div class="form-group">
-          <label for="start_time">Date de début:</label>
-          <input type="datetime-local" name="start_time" id="start_time" value="${defaultStart}" required>
+        <div class="modal-body">
+          <form id="reservation-form">
+            <input type="hidden" name="spot_id" value="${spotId || ''}">
+            <input type="hidden" name="user_id" value="${userId || ''}">
+            <div class="form-group">
+              <label for="spot_number">Numéro de place:</label>
+              <input type="text" id="spot_number" value="${spotNumber || ''}" readonly class="form-control-readonly">
+            </div>
+            <div class="form-group">
+              <label for="start_time">Date de début:</label>
+              <input type="datetime-local" name="start_time" id="start_time" value="${defaultStart}" required>
+            </div>
+            <div class="form-group">
+              <label for="end_time">Date de fin:</label>
+              <input type="datetime-local" name="end_time" id="end_time" value="${defaultEnd}" required>
+            </div>
+            <div class="form-group pricing-info">
+              <h3>Tarification</h3>
+              <p>Prix estimé: <span id="reservation-price">Calcul en cours...</span></p>
+            </div>
+            <div class="form-group">
+              <button type="submit" class="btn-primary">Réserver et payer</button>
+              <button type="button" id="cancel-reservation-form" class="btn-secondary">Annuler</button>
+            </div>
+            <div id="form-error" class="error-message"></div>
+          </form>
         </div>
-        <div class="form-group">
-          <label for="end_time">Date de fin:</label>
-          <input type="datetime-local" name="end_time" id="end_time" value="${defaultEnd}" required>
-        </div>
-        <div class="form-group pricing-info">
-          <h3>Tarification</h3>
-          <p>Prix estimé: <span id="reservation-price">Calcul en cours...</span></p>
-        </div>
-        <div class="form-group">
-          <button type="submit" class="btn-primary">Réserver et payer</button>
-          <button type="button" id="cancel-reservation-form" class="btn-secondary">Annuler</button>
-        </div>
-        <div id="form-error" class="error-message"></div>
-      </form>
+      </div>
     </div>
   `;
 }

@@ -1,6 +1,12 @@
 import { fetchJSON } from "../core/fetchWrapper.js";
 import { getCurrentUser } from '../controllers/authController.js';
 import { setupParkingSpotEvents, getParkingSpot, getFormData, deleteParkingSpot } from "../controllers/parkingSpotController.js";
+import { renderReservationForm } from './reservationView.js';
+import { showToast } from './notificationView.js';
+import { calculatePrice } from '../controllers/pricingController.js';
+import { createReservation } from '../controllers/reservationController.js';
+
+
 
 export function renderParkingSpots(spots) {
     const container = document.getElementById("parking-spot-list");
@@ -65,62 +71,97 @@ export function renderParkingSpots(spots) {
     renderSpotsGrid(spots, container);
 }
 
-export function showReservationForm(spotId) {
-  const container = document.getElementById('app-content') || document.body;
-  
-  const formContainer = document.createElement('div');
-  formContainer.className = 'reservation-form-container';
-  formContainer.id = 'reservation-form';
-  
-  import('../controllers/parkingSpotController.js').then(module => {
-    module.getParkingSpot(spotId).then(spot => {
-      if (!spot) {
-        formContainer.innerHTML = '<div class="error-message">Place de parking non trouvée</div>';
-        return;
-      }
-      
-      const currentUser = getCurrentUser();
-      
-      if (!currentUser) {
-        window.location.href = '/app-gestion-parking/public/login';
-        return;
-      }
-      
-      const now = new Date();
-      const startDate = new Date(now);
-      startDate.setHours(startDate.getHours() + 1);
-      startDate.setMinutes(0);
-      
-      const endDate = new Date(startDate);
-      endDate.setHours(endDate.getHours() + 1);
-      
-      const defaultStart = startDate.toISOString().slice(0, 16);
-      const defaultEnd = endDate.toISOString().slice(0, 16);
-      
-      import('../views/reservationView.js').then(reservationView => {
-        formContainer.innerHTML = reservationView.renderReservationForm({
-          spotId: spot.id,
-          spotNumber: spot.spot_number,
-          userId: currentUser.id,
-          defaultStart,
-          defaultEnd
+export async function showReservationForm(spotId) {
+    try {
+        const spot = await getParkingSpot(spotId);
+        if (!spot) {
+            showToast('Place de parking non trouvée', 'error');
+            return;
+        }
+        
+        const currentUser = getCurrentUser();
+        if (!currentUser) {
+            window.location.href = '/app-gestion-parking/public/login';
+            return;
+        }
+        
+        const now = new Date();
+        const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+        
+        const defaultStartTime = now.toISOString().slice(0, 16);
+        const defaultEndTime = twoHoursLater.toISOString().slice(0, 16);
+        
+        const formHTML = renderReservationForm({
+            spotId: spotId,
+            spotNumber: spot.spot_number,
+            userId: currentUser.id,
+            defaultStart: defaultStartTime,
+            defaultEnd: defaultEndTime
         });
         
-        container.appendChild(formContainer);
+        document.body.insertAdjacentHTML('beforeend', formHTML);
+        
+        document.getElementById('close-reservation-modal').addEventListener('click', () => {
+            document.getElementById('reservation-modal').remove();
+        });
+
+        document.getElementById('cancel-reservation-form').addEventListener('click', () => {
+            document.getElementById('reservation-modal').remove();
+        });
+
+        document.getElementById('reservation-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'reservation-modal') {
+                document.getElementById('reservation-modal').remove();
+            }
+        });
         
         setupPriceCalculation(spot);
         
-        document.getElementById('cancel-reservation-form').addEventListener('click', () => {
-          container.removeChild(formContainer);
+        const form = document.getElementById('reservation-form');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            const reservationData = {
+                spot_id: spotId,
+                user_id: currentUser.id,
+                start_time: formData.get('start_time'),
+                end_time: formData.get('end_time')
+            };
+            
+            const errorElement = document.getElementById('form-error');
+            
+            if (new Date(reservationData.end_time) <= new Date(reservationData.start_time)) {
+                errorElement.textContent = 'La date de fin doit être après la date de début';
+                return;
+            }
+            
+            try {
+                const result = await createReservation(reservationData);
+                
+                if (result.success) {
+                    document.getElementById('reservation-modal').remove();
+                    
+                    showToast('Réservation créée avec succès', 'success');
+                    
+                    const priceElement = document.getElementById('reservation-price');
+                    let price = result.price || 0;
+                    
+                    import('../controllers/paymentController.js').then(module => {
+                        module.showPaymentForm(result.reservation_id, price);
+                    });
+                } else {
+                    errorElement.textContent = result.message || 'Une erreur est survenue lors de la réservation';
+                }
+            } catch (error) {
+                errorElement.textContent = 'Erreur lors de la création de la réservation';
+                console.error('Erreur lors de la création de la réservation:', error);
+            }
         });
-        
-        document.getElementById('reservation-form').addEventListener('submit', (e) => {
-          e.preventDefault();
-          submitReservation(spotId);
-        });
-      });
-    });
-  });
+    } catch (error) {
+        console.error('Erreur lors de l\'affichage du formulaire de réservation:', error);
+        showToast('Impossible d\'afficher le formulaire de réservation', 'error');
+    }
 }
 
 function renderSpotsGrid(spots, container) {
@@ -435,38 +476,33 @@ function setupBasicPriceCalculation(pricing) {
     endTimeInput.addEventListener('change', calculatePrice);
 }
 
-  function setupPriceCalculation(spot) {
-  const startInput = document.getElementById('start_time');
-  const endInput = document.getElementById('end_time');
-  const priceElement = document.getElementById('reservation-price');
-  
-  const updatePrice = async () => {
-    const startTime = startInput.value;
-    const endTime = endInput.value;
+function setupPriceCalculation(spot) {
+    const startInput = document.getElementById('start_time');
+    const endInput = document.getElementById('end_time');
+    const priceElement = document.getElementById('reservation-price');
     
-    if (startTime && endTime) {
-      import('../controllers/pricingController.js').then(async pricingModule => {
-        try {
-          const result = await pricingModule.calculatePrice(spot.id, startTime, endTime);
-          if (result.success) {
-            priceElement.textContent = result.formatted_price;
-          } else {
-            priceElement.textContent = 'Erreur de calcul';
-          }
-        } catch (error) {
-          console.error('Erreur lors du calcul du prix:', error);
-          priceElement.textContent = 'Erreur de calcul';
+    const updatePrice = async () => {
+        const start = startInput.value;
+        const end = endInput.value;
+        
+        if (!start || !end) {
+            priceElement.textContent = 'Veuillez sélectionner des dates';
+            return;
         }
-      });
-    }
-  };
-  
-  if (startInput && endInput) {
-    startInput.addEventListener('change', updatePrice);
-    endInput.addEventListener('change', updatePrice);
+        
+        try {
+            const pricing = await calculatePrice(spot.id, start, end);
+            priceElement.textContent = pricing.formattedPrice || `${pricing.price.toFixed(2)} €`;
+        } catch (error) {
+            priceElement.textContent = 'Erreur de calcul';
+            console.error('Erreur lors du calcul du prix:', error);
+        }
+    };
     
     updatePrice();
-  }
+    
+    startInput.addEventListener('change', updatePrice);
+    endInput.addEventListener('change', updatePrice);
 }
   
 function submitReservation(spotId) {

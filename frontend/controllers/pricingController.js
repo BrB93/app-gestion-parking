@@ -2,6 +2,7 @@ import { fetchJSON } from '../core/fetchWrapper.js';
 import { Pricing } from '../models/pricing.js';
 import { renderPricing } from '../views/pricingView.js';
 
+
 export async function loadPricings() {
   try {
     const data = await fetchJSON('/app-gestion-parking/public/api/pricings');
