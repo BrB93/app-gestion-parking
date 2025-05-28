@@ -13,7 +13,7 @@ class ReservationRepository {
     }
 
     public function getAllReservations(): array {
-        $stmt = $this->db->query("SELECT * FROM reservations ORDER BY start_time DESC");
+        $stmt = $this->db->query("SELECT * FROM reservations ORDER BY created_at DESC");
         $reservations = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $reservations[] = new Reservation(
@@ -48,7 +48,7 @@ class ReservationRepository {
     }
 
     public function getReservationsByUserId(int $userId): array {
-        $stmt = $this->db->prepare("SELECT * FROM reservations WHERE user_id = :user_id ORDER BY start_time DESC");
+        $stmt = $this->db->prepare("SELECT * FROM reservations WHERE user_id = :user_id ORDER BY created_at DESC");
         $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
         $stmt->execute();
 
