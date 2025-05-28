@@ -1,8 +1,362 @@
-import { getCurrentUser } from '../controllers/authController.js';
-
 export function renderParkingSpots(spots) {
   const container = document.getElementById("parking-spot-list");
   if (!container) return;
+  
+  if (!document.getElementById('enhanced-parking-style')) {
+    const styleElement = document.createElement('style');
+    styleElement.id = 'enhanced-parking-style';
+    styleElement.textContent = `
+      .parking-map-enhanced {
+        position: relative;
+        width: 100%;
+        background: #2c3e50;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        margin-bottom: 30px;
+        overflow: hidden;
+      }
+      
+      .asphalt-layer {
+        background: #34495e;
+        position: relative;
+        border-radius: 6px;
+        padding: 15px;
+        box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.4);
+      }
+      
+      .drive-lanes {
+        position: relative;
+      }
+      
+      .main-lane {
+        background: #576574;
+        height: 40px;
+        width: 100%;
+        position: relative;
+        margin: 30px 0;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 3px;
+      }
+      
+      .main-lane::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: repeating-linear-gradient(to right, #f5f6fa 0px, #f5f6fa 20px, transparent 20px, transparent 40px);
+        transform: translateY(-50%);
+      }
+      
+      .vertical-lane {
+        background: #576574;
+        width: 30px;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        border-radius: 3px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      }
+      
+      .vertical-lane.left-lane {
+        left: 120px;
+      }
+      
+      .vertical-lane.right-lane {
+        right: 120px;
+      }
+      
+      .vertical-lane::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: repeating-linear-gradient(to bottom, #f5f6fa 0px, #f5f6fa 20px, transparent 20px, transparent 40px);
+        transform: translateX(-50%);
+      }
+      
+      .entrance-area, .exit-area {
+        position: absolute;
+        width: 120px;
+        height: 40px;
+        background: #273c75;
+        color: #f5f6fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        border-radius: 5px;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+        z-index: 10;
+      }
+      
+      .entrance-area {
+        top: 30px;
+        left: 20px;
+      }
+      
+      .entrance-area::before {
+        content: '⬇';
+        margin-right: 5px;
+        font-size: 1.2em;
+      }
+      
+      .exit-area {
+        bottom: 30px;
+        left: 20px;
+      }
+      
+      .exit-area::before {
+        content: '⬆';
+        margin-right: 5px;
+        font-size: 1.2em;
+      }
+      
+      .parking-section {
+        margin: 15px 0;
+        position: relative;
+      }
+      
+      .section-label {
+        position: absolute;
+        top: 0;
+        left: -15px;
+        background: #0097e6;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        transform: translateY(-50%);
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+        z-index: 10;
+      }
+      
+      .spot-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        margin: 8px 0;
+      }
+      
+      .parking-spot-enhanced {
+        width: 50px;
+        height: 30px;
+        margin: 2px;
+        position: relative;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        transform: perspective(300px) rotateX(30deg);
+      }
+      
+      .parking-spot-enhanced:hover {
+        transform: perspective(300px) rotateX(30deg) translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 5;
+      }
+      
+      .parking-spot-enhanced.status-available {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+      }
+      
+      .parking-spot-enhanced.status-reserved {
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+      }
+      
+      .parking-spot-enhanced.status-occupied {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      }
+      
+      .parking-spot-enhanced.status-unavailable {
+        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+      }
+      
+      .spot-markings {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 3;
+      }
+      
+      .spot-markings::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: repeating-linear-gradient(45deg, 
+          rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1) 5px, 
+          transparent 5px, transparent 10px);
+        z-index: -1;
+      }
+      
+      .spot-number {
+        font-size: 11px;
+        font-weight: bold;
+        color: rgba(255, 255, 255, 0.9);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        z-index: 4;
+      }
+      
+      .handicap-symbol, .electric-symbol {
+        font-size: 14px;
+        position: absolute;
+        bottom: 1px;
+        right: 1px;
+        line-height: 1;
+        color: rgba(255, 255, 255, 0.9);
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+      }
+      
+      .car-icon {
+        width: 40px;
+        height: 20px;
+        background-color: #34495e;
+        position: absolute;
+        border-radius: 6px;
+        transform: translateY(-2px);
+        box-shadow: 0 3px 3px rgba(0, 0, 0, 0.2);
+        z-index: 3;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      
+      .car-icon::before {
+        content: '';
+        position: absolute;
+        width: 32px;
+        height: 14px;
+        background-color: #2c3e50;
+        border-radius: 5px;
+        top: 3px;
+      }
+      
+      .car-icon::after {
+        content: '';
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.5);
+        top: 4px;
+        right: 8px;
+      }
+      
+      .parking-legend {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        padding: 10px;
+        margin-top: 20px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+      }
+      
+      .legend-title {
+        font-weight: bold;
+        color: #ecf0f1;
+        margin-bottom: 8px;
+        text-align: center;
+      }
+      
+      .legend-items {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+      }
+      
+      .legend-item {
+        display: flex;
+        align-items: center;
+        margin: 5px 0;
+      }
+      
+      .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        margin-right: 8px;
+      }
+      
+      .legend-color.status-available {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+      }
+      
+      .legend-color.status-reserved {
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+      }
+      
+      .legend-color.status-occupied {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      }
+      
+      .legend-color.status-unavailable {
+        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+      }
+      
+      .legend-icon {
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 8px;
+        color: white;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+      }
+      
+      .legend-label {
+        font-size: 12px;
+        color: #ecf0f1;
+      }
+      
+      .parking-stats {
+        margin-top: 15px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        padding: 10px;
+        text-align: center;
+        color: #ecf0f1;
+        font-weight: bold;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+      }
+      
+      .view-toggle {
+        margin-bottom: 15px;
+      }
+      
+      /* Animation pour les spots occupés */
+      @keyframes carPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+      }
+      
+      .car-icon {
+        animation: carPulse 2s infinite;
+      }
+    `;
+    document.head.appendChild(styleElement);
+  }
   
   const viewToggle = document.createElement("div");
   viewToggle.className = "view-toggle";
@@ -20,7 +374,7 @@ export function renderParkingSpots(spots) {
   if (existingFilter) container.appendChild(existingFilter);
     
   const parkingMap = document.createElement("div");
-  parkingMap.className = "parking-map-realistic";
+  parkingMap.className = "parking-map-enhanced";
   
   const spotsMap = {};
   spots.sort((a, b) => {
@@ -82,7 +436,7 @@ export function renderParkingSpots(spots) {
         const dbSpot = spotsMap[spotNumber] || null;
         
         const spotElement = document.createElement("div");
-        spotElement.className = `parking-spot-realistic ${dbSpot ? dbSpot.getStatusClass() : "status-unavailable"} ${dbSpot ? dbSpot.type : "normale"}`;
+        spotElement.className = `parking-spot-enhanced ${dbSpot ? dbSpot.getStatusClass() : "status-unavailable"} ${dbSpot ? dbSpot.type : "normale"}`;
         spotElement.dataset.spotNumber = spotNumber;
         spotElement.dataset.type = dbSpot ? dbSpot.type : "normale";
         
@@ -138,7 +492,7 @@ export function renderParkingSpots(spots) {
   asphaltLayer.appendChild(parkingAreas);
   parkingMap.appendChild(asphaltLayer);
   
-  addParkingLegend(parkingMap);
+  addEnhancedParkingLegend(parkingMap);
   container.appendChild(parkingMap);
   
   const stats = document.createElement("div");
@@ -167,7 +521,83 @@ export function renderParkingSpots(spots) {
   console.log(`Total: ${totalSpots} places, Existantes: ${existingPlaces}, Non attribuées: ${nonExistingPlaces}`);
 }
 
-function addParkingLegend(container) {
+function showSpotDetails(spot) {
+  const modalContainer = document.createElement('div');
+  modalContainer.className = 'modal-container';
+  modalContainer.id = 'spot-details-modal';
+  
+  modalContainer.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Détails de la place ${spot.spot_number}</h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Type:</strong> ${spot.getTypeLabel()}</p>
+        <p><strong>Statut:</strong> ${spot.getStatusLabel()}</p>
+        <div class="modal-actions">
+          ${spot.status !== 'occupee' && spot.status !== 'maintenance' ? 
+            `<button class="btn-primary btn-reserve" data-id="${spot.id}">Réserver cette place</button>` : 
+            ''}
+          <button class="btn-secondary btn-close-modal">Fermer</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modalContainer);
+  
+  modalContainer.querySelector('.close-modal').addEventListener('click', () => {
+    modalContainer.remove();
+  });
+  
+  modalContainer.querySelector('.btn-close-modal').addEventListener('click', () => {
+    modalContainer.remove();
+  });
+  
+  const reserveBtn = modalContainer.querySelector('.btn-reserve');
+  if (reserveBtn) {
+    reserveBtn.addEventListener('click', () => {
+      modalContainer.remove();
+      import('./parkingSpotView.js').then(module => {
+        module.showReservationForm(spot.id);
+      });
+    });
+  }
+}
+
+function showUnassignedSpotMessage(spotNumber) {
+  const modalContainer = document.createElement('div');
+  modalContainer.className = 'modal-container';
+  modalContainer.id = 'unassigned-spot-modal';
+  
+  modalContainer.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Place non configurée</h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>La place ${spotNumber} n'est pas encore configurée dans le système.</p>
+        <div class="modal-actions">
+          <button class="btn-secondary btn-close-modal">Fermer</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modalContainer);
+  
+  modalContainer.querySelector('.close-modal').addEventListener('click', () => {
+    modalContainer.remove();
+  });
+  
+  modalContainer.querySelector('.btn-close-modal').addEventListener('click', () => {
+    modalContainer.remove();
+  });
+}
+
+function addEnhancedParkingLegend(container) {
   const legend = document.createElement('div');
   legend.className = 'parking-legend';
   
@@ -202,62 +632,4 @@ function addParkingLegend(container) {
   `;
   
   container.appendChild(legend);
-}
-
-function showUnassignedSpotMessage(spotNumber) {
-  const currentUser = getCurrentUser();
-  const isAdmin = currentUser && currentUser.role === 'admin';
-  
-  const modalContainer = document.createElement('div');
-  modalContainer.className = 'modal-container';
-  modalContainer.id = 'spot-details-modal';
-  
-  modalContainer.innerHTML = `
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Place ${spotNumber}</h2>
-        <span class="status-badge badge-secondary">Non attribuée</span>
-      </div>
-      <div class="modal-body">
-        <p>Cette place n'est pas encore configurée dans le système.</p>
-        ${isAdmin ? `
-        <div class="admin-actions">
-          <button id="create-spot-btn" class="btn-primary" data-spot-number="${spotNumber}">
-            Configurer cette place
-          </button>
-        </div>
-        ` : ''}
-      </div>
-      <div class="modal-footer">
-        <button id="close-spot-details" class="btn-secondary">Fermer</button>
-      </div>
-    </div>
-  `;
-  
-  document.body.appendChild(modalContainer);
-  
-  document.getElementById('close-spot-details').addEventListener('click', () => {
-    document.body.removeChild(modalContainer);
-  });
-  
-  const createBtn = document.getElementById('create-spot-btn');
-  if (createBtn) {
-    createBtn.addEventListener('click', () => {
-      import('../controllers/parkingSpotController.js').then(module => {
-        module.createSpotWithNumber(spotNumber);
-      });
-    });
-  }
-}
-
-function showSpotDetails(spot) {
-  if (window.showSpotDetailsModal) {
-    window.showSpotDetailsModal(spot);
-  } else {
-    import('./parkingSpotView.js').then(module => {
-      if (module.showSpotDetailsModal) {
-        module.showSpotDetailsModal(spot);
-      }
-    });
-  }
 }
