@@ -118,7 +118,6 @@ export function setupParkingSpotEvents() {
             try {
                 const formData = await getFormData();
                 
-                // Importer correctement le module de vue
                 const viewModule = await import('../views/parkingSpotView.js');
                 if (!viewModule.renderParkingSpotForm) {
                     console.error("La fonction renderParkingSpotForm n'est pas disponible");

@@ -1,5 +1,4 @@
 export function renderDashboard(stats, userRole) {
-  // Styles intégrés pour les graphiques
   const dashboardStyles = `
     <style>
       .dashboard-container {
@@ -698,7 +697,6 @@ export function renderDashboard(stats, userRole) {
       </div>
     `;
   } else {
-    // Utilisateur standard
     html += `
       <div class="stats-row">
         <div class="stat-card">
@@ -825,7 +823,6 @@ export function renderDashboard(stats, userRole) {
     </div>
     
     <script>
-      // Animation des graphiques au chargement
       document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.bar-segment').forEach(bar => {
           const originalHeight = bar.style.height;

@@ -97,7 +97,6 @@ class PersonController {
             $result = $this->personRepo->createPerson($data);
             
             if ($result) {
-                // Correction de la syntaxe JSON
                 echo json_encode([
                     'success' => true, 
                     'message' => 'Personne créée avec succès',
