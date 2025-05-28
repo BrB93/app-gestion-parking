@@ -1,3 +1,6 @@
+import { getCurrentUser } from '../controllers/authController.js';
+
+
 export function renderParkingSpots(spots) {
   const container = document.getElementById("parking-spot-list");
   if (!container) return;
@@ -522,6 +525,9 @@ export function renderParkingSpots(spots) {
 }
 
 function showSpotDetails(spot) {
+  const currentUser = getCurrentUser?.();
+  const canReserve = currentUser && currentUser.role === 'user' && spot.status !== 'occupee' && spot.status !== 'maintenance';
+
   const modalContainer = document.createElement('div');
   modalContainer.className = 'modal-container';
   modalContainer.id = 'spot-details-modal';
@@ -535,8 +541,13 @@ function showSpotDetails(spot) {
       <div class="modal-body">
         <p><strong>Type:</strong> ${spot.getTypeLabel()}</p>
         <p><strong>Statut:</strong> ${spot.getStatusLabel()}</p>
+        ${currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner') ? `
+          <p><strong>ID:</strong> ${spot.id}</p>
+          <p><strong>Tarif associé:</strong> ${spot.pricing_id ?? 'Non défini'}</p>
+          <p><strong>Propriétaire:</strong> ${spot.owner_id ?? 'Aucun'}</p>
+        ` : ''}
         <div class="modal-actions">
-          ${spot.status !== 'occupee' && spot.status !== 'maintenance' ? 
+          ${canReserve ? 
             `<button class="btn-primary btn-reserve" data-id="${spot.id}">Réserver cette place</button>` : 
             ''}
           <button class="btn-secondary btn-close-modal">Fermer</button>
@@ -554,16 +565,19 @@ function showSpotDetails(spot) {
   modalContainer.querySelector('.btn-close-modal').addEventListener('click', () => {
     modalContainer.remove();
   });
-  
+
+if (canReserve) {
   const reserveBtn = modalContainer.querySelector('.btn-reserve');
   if (reserveBtn) {
-    reserveBtn.addEventListener('click', () => {
+    reserveBtn.addEventListener('click', async () => {
       modalContainer.remove();
-      import('./parkingSpotView.js').then(module => {
+      const module = await import('./parkingSpotView.js');
+      if (module.showReservationForm) {
         module.showReservationForm(spot.id);
-      });
+      }
     });
   }
+}
 }
 
 function showUnassignedSpotMessage(spotNumber) {
