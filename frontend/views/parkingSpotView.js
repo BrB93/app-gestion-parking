@@ -85,11 +85,23 @@ export async function showReservationForm(spotId) {
             return;
         }
         
+        // Définit l'heure actuelle et arrondit à l'heure entière supérieure
         const now = new Date();
-        const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+        // Si nous avons des minutes, on arrondit à l'heure supérieure
+        if (now.getMinutes() > 0) {
+            now.setHours(now.getHours() + 1);
+        }
+        // On met les minutes et secondes à zéro
+        now.setMinutes(0);
+        now.setSeconds(0);
         
-        const defaultStartTime = now.toISOString().slice(0, 16);
-        const defaultEndTime = twoHoursLater.toISOString().slice(0, 16);
+        // Heure de fin par défaut (2 heures plus tard)
+        const twoHoursLater = new Date(now);
+        twoHoursLater.setHours(now.getHours() + 2);
+        
+        // Format pour les inputs datetime-local en respectant le fuseau horaire
+        const defaultStartTime = formatDateTimeForInput(now);
+        const defaultEndTime = formatDateTimeForInput(twoHoursLater);
         
         const formHTML = renderReservationForm({
             spotId: spotId,
@@ -100,6 +112,25 @@ export async function showReservationForm(spotId) {
         });
         
         document.body.insertAdjacentHTML('beforeend', formHTML);
+        
+        // Restriction des champs pour n'accepter que des heures entières
+        const startTimeField = document.getElementById('start_time');
+        const endTimeField = document.getElementById('end_time');
+        
+        if (startTimeField && endTimeField) {
+            // Force la sélection des heures entières uniquement
+            startTimeField.addEventListener('change', (e) => {
+                const date = new Date(e.target.value);
+                date.setMinutes(0);
+                e.target.value = formatDateTimeForInput(date);
+            });
+            
+            endTimeField.addEventListener('change', (e) => {
+                const date = new Date(e.target.value);
+                date.setMinutes(0);
+                e.target.value = formatDateTimeForInput(date);
+            });
+        }
         
         document.getElementById('close-reservation-modal').addEventListener('click', () => {
             document.getElementById('reservation-modal').remove();
@@ -162,6 +193,16 @@ export async function showReservationForm(spotId) {
         console.error('Erreur lors de l\'affichage du formulaire de réservation:', error);
         showToast('Impossible d\'afficher le formulaire de réservation', 'error');
     }
+}
+
+// Fonction auxiliaire pour formater les dates correctement selon le fuseau horaire local
+function formatDateTimeForInput(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}T${hours}:00`;
 }
 
 function renderSpotsGrid(spots, container) {
