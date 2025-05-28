@@ -63,6 +63,7 @@ function handleNotificationContainerClick(e) {
         
         markAsRead(notificationId).then(() => {
             const notificationElement = markReadBtn.closest('.notification-item');
+            const notificationsContainer = notificationElement.parentNode;
             notificationElement.classList.remove('unread');
             markReadBtn.style.display = 'none';
             
@@ -73,8 +74,8 @@ function handleNotificationContainerClick(e) {
                 if (notificationElement.parentNode) {
                     notificationElement.parentNode.removeChild(notificationElement);
                     
-                    if (container.querySelectorAll('.notification-item').length === 0) {
-                        container.innerHTML = `
+                    if (notificationsContainer.querySelectorAll('.notification-item').length === 0) {
+                        notificationsContainer.innerHTML = `
                             <div class="notification-empty">
                                 <p>Vous n'avez pas de notifications non lues</p>
                             </div>
