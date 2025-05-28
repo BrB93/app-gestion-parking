@@ -85,21 +85,16 @@ export async function showReservationForm(spotId) {
             return;
         }
         
-        // Définit l'heure actuelle et arrondit à l'heure entière supérieure
         const now = new Date();
-        // Si nous avons des minutes, on arrondit à l'heure supérieure
         if (now.getMinutes() > 0) {
             now.setHours(now.getHours() + 1);
         }
-        // On met les minutes et secondes à zéro
         now.setMinutes(0);
         now.setSeconds(0);
-        
-        // Heure de fin par défaut (2 heures plus tard)
+
         const twoHoursLater = new Date(now);
         twoHoursLater.setHours(now.getHours() + 2);
         
-        // Format pour les inputs datetime-local en respectant le fuseau horaire
         const defaultStartTime = formatDateTimeForInput(now);
         const defaultEndTime = formatDateTimeForInput(twoHoursLater);
         
@@ -113,12 +108,10 @@ export async function showReservationForm(spotId) {
         
         document.body.insertAdjacentHTML('beforeend', formHTML);
         
-        // Restriction des champs pour n'accepter que des heures entières
         const startTimeField = document.getElementById('start_time');
         const endTimeField = document.getElementById('end_time');
         
         if (startTimeField && endTimeField) {
-            // Force la sélection des heures entières uniquement
             startTimeField.addEventListener('change', (e) => {
                 const date = new Date(e.target.value);
                 date.setMinutes(0);
@@ -195,7 +188,6 @@ export async function showReservationForm(spotId) {
     }
 }
 
-// Fonction auxiliaire pour formater les dates correctement selon le fuseau horaire local
 function formatDateTimeForInput(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
