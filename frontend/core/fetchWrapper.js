@@ -12,7 +12,7 @@ export async function fetchJSON(url) {
         const currentPath = window.location.pathname;
         if (!currentPath.includes('/login')) {
           localStorage.setItem("redirect_after_login", currentPath);
-          window.location.href = "/app-gestion-parking/public/login?session_expired=true";
+          window.location.href = "/app-gestion-parking/public/";
         }
         throw new Error('Session expirée');
       }
@@ -44,7 +44,7 @@ export async function postJSON(url, data) {
         const currentPath = window.location.pathname;
         if (!currentPath.includes('/login')) {
           localStorage.setItem("redirect_after_login", currentPath);
-          window.location.href = "/app-gestion-parking/public/login?session_expired=true";
+          window.location.href = "/app-gestion-parking/public/";
         }
         throw new Error('Session expirée');
       }
