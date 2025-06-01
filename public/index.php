@@ -507,146 +507,39 @@ if ($uri === '/app-gestion-parking/public/' || $uri === '/app-gestion-parking/pu
 <head>
   <meta charset="UTF-8">
   <title>SmartPark - Gestion intelligente de parking</title>
-  <link rel="stylesheet" href="/app-gestion-parking/public/assets/css/styles.css">
+    <link rel="stylesheet" href="/app-gestion-parking/public/assets/css/styles.css">
   <script type="module" src="/app-gestion-parking/frontend/app.js" defer></script>
-  <style>
-    .hero-section {
-      background-color: #3498db;
-      color: white;
-      padding: 60px 20px;
-      text-align: center;
-      border-radius: 10px;
-      margin-bottom: 40px;
-    }
-    
-    .hero-section h1 {
-      font-size: 3em;
-      margin-bottom: 15px;
-    }
-    
-    .hero-section p {
-      font-size: 1.2em;
-      margin-bottom: 30px;
-      max-width: 800px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    
-    .features-section {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 30px;
-      margin-bottom: 50px;
-    }
-    
-    .feature-card {
-      background-color: #f8f9fa;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      padding: 25px;
-      width: 300px;
-      text-align: center;
-      transition: transform 0.3s;
-    }
-    
-    .feature-card:hover {
-      transform: translateY(-10px);
-    }
-    
-    .feature-icon {
-      font-size: 48px;
-      margin-bottom: 20px;
-      color: #3498db;
-    }
-    
-    .cta-button {
-      background-color: #2ecc71;
-      color: white;
-      border: none;
-      padding: 15px 30px;
-      font-size: 1.2em;
-      border-radius: 30px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-      display: inline-block;
-      margin-top: 20px;
-      text-decoration: none;
-    }
-    
-    .cta-button:hover {
-      background-color: #27ae60;
-    }
-    
-    .footer-section {
-      text-align: center;
-      margin-top: 40px;
-      padding: 20px;
-      color: #7f8c8d;
-      font-size: 0.9em;
-    }
-  </style>
 </head>
 <body>
   <div id="app-content">
-    <div class="hero-section">
+    <div class="home-hero">
       <h1>SmartPark</h1>
       <p>La solution moderne pour la gestion de votre parking. Réservez, payez et gérez vos places de stationnement en toute simplicité.</p>
-      <a href="/app-gestion-parking/public/login" class="cta-button">Connexion / Inscription</a>
-    </div>
-    
-    <div class="features-section">
-      <div class="feature-card">
-        <div class="feature-icon">🚗</div>
-        <h3>Réservation Facile</h3>
-        <p>Trouvez et réservez une place de parking en quelques clics, de n'importe où et à tout moment.</p>
-      </div>
-      
-      <div class="feature-card">
-        <div class="feature-icon">💳</div>
-        <h3>Paiement Sécurisé</h3>
-        <p>Effectuez vos paiements en ligne en toute sécurité avec nos méthodes de paiement variées.</p>
-      </div>
-      
-      <div class="feature-card">
-        <div class="feature-icon">📱</div>
-        <h3>Gestion Personnalisée</h3>
-        <p>Gérez vos réservations, consultez votre historique et recevez des notifications en temps réel.</p>
+      <div class="home-cta-buttons">
+        <a href="/app-gestion-parking/public/login" class="btn-primary">Connexion / Inscription</a>
       </div>
     </div>
-    
-    <div class="features-section">
-      <div class="feature-card">
-        <div class="feature-icon">⚡</div>
-        <h3>Places Spéciales</h3>
-        <p>Accédez à des places pour véhicules électriques, PMR et autres types d'emplacements spécifiques.</p>
-      </div>
-      
-      <div class="feature-card">
-        <div class="feature-icon">👥</div>
-        <h3>Profils Multiples</h3>
-        <p>Fonctionnalités adaptées pour les utilisateurs, propriétaires de places et administrateurs.</p>
-      </div>
-      
-      <div class="feature-card">
-        <div class="feature-icon">📊</div>
-        <h3>Tarification Transparente</h3>
-        <p>Consultez les tarifs en temps réel selon les horaires et types d'emplacements.</p>
-      </div>
-    </div>
-    
-    <div style="text-align: center; margin: 40px 0;">
+    <div id="map-container" style="height: 400px;"></div>
+
+    <div class="home-section" style="text-align: center;">
       <h2>Prêt à simplifier votre stationnement ?</h2>
-      <a href="/app-gestion-parking/public/login" class="cta-button">Commencer maintenant</a>
+      <a href="/app-gestion-parking/public/login" class="btn-primary" style="margin-top:18px;">Commencer maintenant</a>
     </div>
-    
+
+    <div class="home-contact">
+      <p>
+        Vous représentez une copropriété ?<br>
+        Contactez notre équipe à <a href="mailto:contact@smartpark.fr">contact@smartpark.fr</a> pour une démonstration personnalisée.
+      </p>
+    </div>
+
     <div class="footer-section">
       <p>© 2025 SmartPark - Application de gestion de parking</p>
     </div>
   </div>
 </body>
 </html>
-    <?php
+<?php
     exit;
 }
 
