@@ -40,10 +40,7 @@ nav {
   z-index: 100;
 }
 
-.nav-links {
-  gap: 24px;
-}
-
+.nav-links { gap: 24px; }
 .nav-links a {
   color: var(--primary);
   text-decoration: none;
@@ -65,26 +62,22 @@ nav {
   cursor: pointer;
   transition: background var(--transition), color var(--transition);
 }
-
 .logout-btn, .btn-danger, .btn-delete, .btn-delete-spot, .btn-cancel-payment, .btn-cancel-reservation {
   background: var(--danger);
   color: var(--white);
 }
 .logout-btn:hover, .btn-danger:hover, .btn-delete:hover, .btn-delete-spot:hover, .btn-cancel-payment:hover, .btn-cancel-reservation:hover { background: #b91c1c; }
-
 .btn-primary, .btn-edit, .btn-edit-spot, .btn-edit-reservation, .btn-reserve-spot {
   background: var(--primary);
   color: var(--white);
 }
 .btn-primary:hover, .btn-edit:hover, .btn-edit-spot:hover, .btn-edit-reservation:hover, .btn-reserve-spot:hover { background: var(--primary-dark); }
-
 .btn-secondary {
   background: var(--secondary);
   color: var(--primary);
   border: 1px solid var(--primary);
 }
 .btn-secondary:hover { background: var(--primary); color: var(--white); }
-
 .mark-read-btn { background: var(--accent); }
 .mark-read-btn:hover { background: #059669; }
 
@@ -109,11 +102,9 @@ nav {
   min-width: 260px;
   max-width: 420px;
 }
-
 .card:hover, .user-card:hover, .person-card:hover, .payment-card:hover, .reservation-item:hover, .notification-item:hover, .parking-spot:hover {
   box-shadow: 0 4px 20px rgba(37,99,235,0.10);
 }
-
 .user-card.inactive, .person-card.inactive, .reservation-item.status-cancelled {
   opacity: 0.7;
   background: #f3f4f6;
@@ -129,15 +120,12 @@ nav {
   border-radius: 8px;
   font-size: 0.98rem;
 }
-
 .status-badge.status-pending, .payment-status.status-pending { background: #fef9c3; }
 .status-badge.status-confirmed, .payment-status.status-completed { background: #e6f9f2; }
 .status-badge.status-cancelled, .payment-status.status-failed { background: #fee2e2; }
 .status-reserved { background: #fef9c3; }
 
-.user-card, .person-card, .payment-card, .reservation-item, .parking-spot {
-  border-left: 5px solid var(--primary);
-}
+.user-card, .person-card, .payment-card, .reservation-item, .parking-spot { border-left: 5px solid var(--primary); }
 .user-card.inactive, .person-card.inactive, .reservation-item.status-cancelled, .parking-spot.status-occupied { border-left-color: var(--danger); }
 .payment-card.status-completed, .reservation-item.status-confirmed, .parking-spot.status-available { border-left-color: var(--accent); }
 .payment-card.status-pending, .reservation-item.status-pending, .parking-spot.status-reserved { border-left-color: var(--warning); }
@@ -160,7 +148,6 @@ h3 { font-size: 1.1rem; margin-bottom: 12px; }
   padding: 28px 24px 18px 24px;
   box-shadow: var(--card-shadow);
 }
-
 .form-group { margin-bottom: 18px; display: flex; flex-direction: column; }
 label { font-weight: 500; margin-bottom: 6px; color: var(--gray); }
 input, select, textarea {
@@ -278,12 +265,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); outlin
 ::-webkit-scrollbar { width: 8px; background: #e5e7eb; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
 
-ody {
-  font-family: 'Segoe UI', Arial, sans-serif;
-  background: #f7f9fb;
-  margin: 0;
-  padding: 0;
-}
 .welcome-section {
   background: linear-gradient(90deg, #4f8cff 0%, #6ed6ff 100%);
   color: #fff;
@@ -292,15 +273,8 @@ ody {
   text-align: center;
   margin-bottom: 30px;
 }
-.welcome-section h1 {
-  font-size: 2.2rem;
-  margin-bottom: 10px;
-  font-weight: 700;
-}
-.welcome-text {
-  font-size: 1.2rem;
-  margin-bottom: 20px;
-}
+.welcome-section h1 { font-size: 2.2rem; margin-bottom: 10px; font-weight: 700; }
+.welcome-text { font-size: 1.2rem; margin-bottom: 20px; }
 #map-container {
   width: 100%;
   height: 220px;
@@ -326,12 +300,8 @@ ody {
   flex: 1 1 270px;
   text-align: center;
 }
-.owner-card {
-  border: 2px solid #4f8cff;
-}
-.condo-card {
-  background: #f0f7ff;
-}
+.owner-card { border: 2px solid #4f8cff; }
+.condo-card { background: #f0f7ff; }
 .action-buttons {
   margin-top: 18px;
   display: flex;
@@ -347,22 +317,10 @@ ody {
   transition: background 0.2s;
   font-size: 1rem;
 }
-.btn-primary {
-  background: #4f8cff;
-  color: #fff;
-  border: none;
-}
-.btn-primary:hover {
-  background: #2563eb;
-}
-.btn-secondary {
-  background: #fff;
-  color: #4f8cff;
-  border: 2px solid #4f8cff;
-}
-.btn-secondary:hover {
-  background: #e6f0ff;
-}
+.btn-primary { background: #4f8cff; color: #fff; border: none; }
+.btn-primary:hover { background: #2563eb; }
+.btn-secondary { background: #fff; color: #4f8cff; border: 2px solid #4f8cff; }
+.btn-secondary:hover { background: #e6f0ff; }
 .welcome-features {
   margin: 40px auto 0 auto;
   max-width: 900px;
@@ -389,10 +347,7 @@ ody {
   flex: 1 1 200px;
   margin-bottom: 10px;
 }
-.feature-icon {
-  font-size: 2.2rem;
-  margin-bottom: 10px;
-}
+.feature-icon { font-size: 2.2rem; margin-bottom: 10px; }
 
 .blink-marker {
   background: #ff0000;
@@ -407,17 +362,11 @@ ody {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.2; }
 }
-@media (max-width: 900px) {
-  .user-actions, .features-grid {
-    flex-direction: column;
-    gap: 18px;
-  }
-  .welcome-section {
-    padding: 30px 10px 20px 10px;
-  }
-}
 
-/* Responsive */
+@media (max-width: 900px) {
+  .user-actions, .features-grid { flex-direction: column; gap: 18px; }
+  .welcome-section { padding: 30px 10px 20px 10px; }
+}
 @media (max-width: 1000px) {
   #app-content { max-width: 98vw; padding: 16px 4vw; }
   nav { padding: 0 10px; }
