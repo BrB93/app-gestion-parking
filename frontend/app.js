@@ -140,51 +140,90 @@ path: '/app-gestion-parking/public/',
           const content = document.getElementById('app-content');
           if (content) {
 content.innerHTML = `
-  <div class="welcome-section">
-    <h1>SmartPark - Solution de gestion de parking pour copropriétés</h1>
-    <p class="welcome-text">Découvrez les places de parkings à louer à l'heure, au jour ou au mois dans cette copropriété !</p>
-    <div id="map-container"></div>
-  </div>
-  <div class="user-actions">
-    <div class="action-card">
-      <h3>Vous êtes un résident ou visiteur ?</h3>
-      <p>Connectez-vous ou créez un compte pour réserver une place de parking.</p>
+  <section class="welcome-section" style="background: linear-gradient(120deg, #2563eb 0%, #0ea5e9 100%); position:relative;">
+    <div style="position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;opacity:0.12;z-index:0;background:url('https://www.transparenttextures.com/patterns/asfalt-light.png');"></div>
+    <div style="position:relative;z-index:1;">
+      <h1>
+        <span style="display:inline-block;vertical-align:middle;">
+          <svg width="48" height="48" fill="none" viewBox="0 0 48 48" style="vertical-align:middle;margin-right:10px;">
+            <rect x="6" y="18" width="36" height="18" rx="4" fill="#fff" stroke="#1741a6" stroke-width="2"/>
+            <rect x="12" y="24" width="24" height="8" rx="2" fill="#e6efff"/>
+            <circle cx="14" cy="38" r="3" fill="#2563eb"/>
+            <circle cx="34" cy="38" r="3" fill="#2563eb"/>
+            <rect x="20" y="28" width="8" height="4" rx="1" fill="#93c5fd"/>
+          </svg>
+        </span>
+        SmartPark Résidence
+      </h1>
+      <p class="welcome-text">
+        <strong>Le parking partagé, pensé pour votre copropriété.</strong><br>
+        Réservez, louez ou gérez votre place en toute simplicité, dans un espace sécurisé et communautaire.
+      </p>
+      <div id="map-container"></div>
+    </div>
+  </section>
+  <section class="user-actions" style="margin-top:-40px;">
+    <div class="action-card" style="background:linear-gradient(120deg,#f3f4f6 60%,#e6efff 100%);">
+      <h3><span style="font-size:1.5em;">🚗</span> Résidents & Visiteurs</h3>
+      <p>Besoin d’une place pour quelques heures, une nuit ou un mois ?<br>
+      <span style="color:var(--primary-dark);font-weight:600;">Réservez en 3 clics, accédez à votre parking d’immeuble comme chez vous.</span></p>
       <div class="action-buttons">
         <a href="/app-gestion-parking/public/login" class="btn btn-primary">Se connecter</a>
-        <a href="/app-gestion-parking/public/register" class="btn btn-secondary">S'inscrire</a>
+        <a href="/app-gestion-parking/public/register" class="btn btn-secondary">Créer un compte</a>
       </div>
     </div>
-    <div class="action-card owner-card">
-      <h3>Vous êtes propriétaire d'une place ?</h3>
-      <p>Connectez-vous pour gérer vos places de parking et suivre vos revenus.</p>
-      <a href="/app-gestion-parking/public/login" class="btn btn-secondary">Espace propriétaire</a>
+    <div class="action-card owner-card" style="background:linear-gradient(120deg,#e6efff 60%,#f3f4f6 100%);">
+      <h3><span style="font-size:1.5em;">🅿️</span> Propriétaires</h3>
+      <p>Valorisez votre place inutilisée.<br>
+      <span style="color:var(--accent);font-weight:600;">Gérez vos disponibilités, suivez vos revenus, tout est centralisé.</span></p>
+      <div class="action-buttons">
+        <a href="/app-gestion-parking/public/login" class="btn btn-secondary">Espace propriétaire</a>
+      </div>
     </div>
-    <div class="action-card condo-card">
-      <h3>Vous représentez une copropriété ?</h3>
-      <p>Intéressé par notre solution pour votre immeuble ou résidence ?</p>
-      <p>Contactez notre équipe à <a href="mailto:contact@smartpark.fr">contact@smartpark.fr</a> pour une démonstration personnalisée.</p>
+    <div class="action-card condo-card" style="background:linear-gradient(120deg,#f0f7ff 60%,#e6efff 100%);">
+      <h3><span style="font-size:1.5em;">🏢</span> Syndic / Conseil Syndical</h3>
+      <p>
+        <span style="color:var(--primary-dark);font-weight:600;">Optimisez l’utilisation du parking de votre immeuble.</span><br>
+        Suivi des flux, sécurité, transparence, gestion des droits propriétaires.
+      </p>
+      <p>
+        <a href="mailto:contact@smartpark.fr" class="btn btn-primary" style="margin-top:10px;">Demander une démo</a>
+      </p>
     </div>
-  </div>
-  <div class="welcome-features">
-    <h2>Nos fonctionnalités</h2>
+  </section>
+  <section class="welcome-features" style="margin-top:40px;">
+    <h2>Pourquoi choisir SmartPark ?</h2>
     <div class="features-grid">
       <div class="feature-card">
-        <div class="feature-icon">🅿️</div>
-        <h3>Gestion des places</h3>
-        <p>Gérez facilement toutes les places de parking de votre copropriété</p>
+        <div class="feature-icon" style="background:#e6efff;">🔒</div>
+        <h3>Sécurité & Sérénité</h3>
+        <p>Accès contrôlé, historique des entrées/sorties, notifications en temps réel.<br>
+        <span style="color:var(--primary-dark);font-size:0.95em;">Votre parking, votre tranquillité.</span></p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">📱</div>
-        <h3>Réservations en ligne</h3>
-        <p>Système de réservation simple et efficace</p>
+        <div class="feature-icon" style="background:#e6ffe6;">🤝</div>
+        <h3>Communauté & Confiance</h3>
+        <p>La copropriété valide les propriétaires, chaque location est encadrée.<br>
+        <span style="color:var(--accent);font-size:0.95em;">Un esprit d’immeuble, même au parking.</span></p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">💶</div>
-        <h3>Paiements sécurisés</h3>
-        <p>Paiements en ligne pour les résidents et visiteurs</p>
+        <div class="feature-icon" style="background:#fffbe6;">📱</div>
+        <h3>100% Digital & Mobile</h3>
+        <p>Réservation, paiement, gestion : tout se fait en ligne, sur mobile ou ordinateur.<br>
+        <span style="color:var(--primary-dark);font-size:0.95em;">Plus besoin de papier ni d’aller au bureau du syndic !</span></p>
       </div>
     </div>
-  </div>
+    <div style="margin-top:80px;">
+      <span style="color:var(--gray);font-size:1.1em;">
+        <svg width="22" height="22" fill="none" viewBox="0 0 22 22" style="vertical-align:middle;margin-right:6px;">
+          <circle cx="11" cy="11" r="10" stroke="#2563eb" stroke-width="2"/>
+          <path d="M7 11l3 3 5-5" stroke="#10b981" stroke-width="2" fill="none"/>
+        </svg>
+        Solution conçue pour les copropriétés modernes, par des experts de l’immobilier et du digital.
+      </span>
+    </div>
+
+  </section>
 `;
             
             loadParisMap();
