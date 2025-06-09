@@ -507,35 +507,11 @@ if ($uri === '/app-gestion-parking/public/' || $uri === '/app-gestion-parking/pu
 <head>
   <meta charset="UTF-8">
   <title>SmartPark - Gestion intelligente de parking</title>
-    <link rel="stylesheet" href="/app-gestion-parking/public/assets/css/styles.css">
+  <link rel="stylesheet" href="/app-gestion-parking/public/assets/css/styles.css">
   <script type="module" src="/app-gestion-parking/frontend/app.js" defer></script>
 </head>
 <body>
   <div id="app-content">
-    <div class="home-hero">
-      <h1>SmartPark</h1>
-      <p>La solution moderne pour la gestion de votre parking. Réservez, payez et gérez vos places de stationnement en toute simplicité.</p>
-      <div class="home-cta-buttons">
-        <a href="/app-gestion-parking/public/login" class="btn-primary">Connexion / Inscription</a>
-      </div>
-    </div>
-    <div id="map-container" style="height: 400px;"></div>
-
-    <div class="home-section" style="text-align: center;">
-      <h2>Prêt à simplifier votre stationnement ?</h2>
-      <a href="/app-gestion-parking/public/login" class="btn-primary" style="margin-top:18px;">Commencer maintenant</a>
-    </div>
-
-    <div class="home-contact">
-      <p>
-        Vous représentez une copropriété ?<br>
-        Contactez notre équipe à <a href="mailto:contact@smartpark.fr">contact@smartpark.fr</a> pour une démonstration personnalisée.
-      </p>
-    </div>
-
-    <div class="footer-section">
-      <p>© 2025 SmartPark - Application de gestion de parking</p>
-    </div>
   </div>
 </body>
 </html>
