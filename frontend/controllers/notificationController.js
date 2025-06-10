@@ -221,14 +221,8 @@ export function initializeNotifications() {
 async function showUnreadNotificationsToast() {
     if (unreadCount > 0) {
         const data = await fetchJSON('/app-gestion-parking/public/api/notifications');
-        
-        const unreadNotifications = data
-            .filter(n => !n.is_read)
-            .slice(0, 3)
-            .map(n => n.content);
-            
-        if (unreadNotifications.length > 0) {
-            showToast(`Vous avez ${unreadCount} notification${unreadCount > 1 ? 's' : ''} non lue${unreadCount > 1 ? 's' : ''}`, 'info', 5000);
-        }
+        const message = `Vous avez ${unreadCount} notification${unreadCount > 1 ? 's' : ''} non lue${unreadCount > 1 ? 's' : ''}`;
+        const notificationsUrl = '/app-gestion-parking/public/notifications';
+        showToast(message, 'info', 5000, notificationsUrl);
     }
 }

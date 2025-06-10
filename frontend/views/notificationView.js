@@ -90,28 +90,46 @@ function handleNotificationContainerClick(e) {
     }
 }
 
-export function showToast(message, type = 'info', duration = 3000) {
+export function showToast(message, type = 'info', duration = 3000, url = null) {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    toast.innerHTML = `<p>${message}</p>`;
     
-    const toastContainer = document.getElementById('toast-container');
-    if (toastContainer) {
-        toastContainer.appendChild(toast);
+    if (url) {
+        toast.classList.add('clickable-toast');
+        toast.innerHTML = `<p>${message}</p>`;
+        toast.addEventListener('click', () => {
+            window.location.href = url;
+        });
         
-        setTimeout(() => {
-            toast.classList.add('show');
-        }, 10);
-        
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.parentNode.removeChild(toast);
-                }
-            }, 300);
-        }, duration);
+        const linkIcon = document.createElement('span');
+        linkIcon.className = 'toast-link-icon';
+        linkIcon.innerHTML = ' <i class="fas fa-external-link-alt"></i>';
+        toast.querySelector('p').appendChild(linkIcon);
+    } else {
+        toast.innerHTML = `<p>${message}</p>`;
     }
+    
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        document.body.appendChild(toastContainer);
+    }
+    
+    toastContainer.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, duration);
 }
 
 export function addNotificationBadge(container) {
