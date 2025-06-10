@@ -100,11 +100,29 @@ export async function logout() {
 }
 
 export function getCurrentUser() {
-  const userData = localStorage.getItem("currentUser");
-  if (!userData) return null;
+  try {
+    const userData = localStorage.getItem("currentUser");
+    if (!userData) return null;
 
-  const user = JSON.parse(userData);
-  return new User(user.id, user.username, user.email, user.role);
+    const user = JSON.parse(userData);
+    
+    if (!user.id || !user.role) {
+      console.error("Données utilisateur incomplètes dans localStorage");
+      localStorage.removeItem("currentUser");
+      return null;
+    }
+    
+    return new User(
+      user.id, 
+      user.username || "Utilisateur", 
+      user.email || "", 
+      user.role
+    );
+  } catch (error) {
+    console.error("Erreur lors de la récupération des données utilisateur:", error);
+    localStorage.removeItem("currentUser");
+    return null;
+  }
 }
 
 export function checkAuthStatus() {

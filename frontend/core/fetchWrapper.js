@@ -9,11 +9,9 @@ export async function fetchJSON(url) {
       if (response.status === 401) {
         console.log("Session expirée ou utilisateur non connecté");
         
-        const currentPath = window.location.pathname;
-        if (!currentPath.includes('/login')) {
-          localStorage.setItem("redirect_after_login", currentPath);
-          window.location.href = "/app-gestion-parking/public/";
-        }
+        localStorage.removeItem("currentUser");
+        
+        window.location.href = "/app-gestion-parking/public/login?session_expired=true";
         throw new Error('Session expirée');
       }
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -41,11 +39,9 @@ export async function postJSON(url, data) {
       if (response.status === 401) {
         console.log("Session expirée ou utilisateur non connecté");
         
-        const currentPath = window.location.pathname;
-        if (!currentPath.includes('/login')) {
-          localStorage.setItem("redirect_after_login", currentPath);
-          window.location.href = "/app-gestion-parking/public/";
-        }
+        localStorage.removeItem("currentUser");
+        
+        window.location.href = "/app-gestion-parking/public/login?session_expired=true";
         throw new Error('Session expirée');
       }
       throw new Error(`HTTP error! status: ${response.status}`);
