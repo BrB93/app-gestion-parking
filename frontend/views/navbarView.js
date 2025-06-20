@@ -38,6 +38,19 @@ export function renderNavbar() {
         module.logout();
       });
     });
-  } else {
   }
+  
+  const footer = document.createElement('footer');
+  footer.className = 'app-footer';
+  footer.innerHTML = `
+    <div class="footer-content">
+      <p>&copy; ${new Date().getFullYear()} SmartPark - Tous droits réservés</p>
+      <p>
+        <a href="https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on" target="_blank" rel="noopener noreferrer">Politique de confidentialité (RGPD)</a>
+        | <a href="https://www.service-public.fr/particuliers/vosdroits/F32463" target="_blank" rel="noopener noreferrer">Mentions légales</a>
+      </p>
+    </div>
+  `;
+  
+  document.body.appendChild(footer);
 }
